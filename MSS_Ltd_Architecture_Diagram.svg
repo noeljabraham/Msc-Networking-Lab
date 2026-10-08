@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1250" viewBox="0 0 1600 1250" role="img" aria-labelledby="title desc">
   <title id="title">MSS Ltd Secure LAN Architecture</title>
   <desc id="desc">Hierarchical Cisco Packet Tracer architecture with ISP, edge router, redundant core switches, floor access switches, departmental VLANs, server farm, management VLAN, and backup VLAN.</desc>
   <defs>
@@ -21,7 +21,7 @@
     </style>
   </defs>
 
-  <rect x="0" y="0" width="1600" height="1050" fill="#ffffff"/>
+  <rect x="0" y="0" width="1600" height="1250" fill="#ffffff"/>
   <text x="60" y="58" class="title">MSS Ltd Secure LAN Architecture</text>
   <text x="60" y="88" class="subtitle">Cisco Packet Tracer design for three floors, departmental VLANs, server farm, Internet access, security controls, and redundancy</text>
 
@@ -111,11 +111,32 @@
   <path d="M512 935 L512 970" class="line"/>
   <path d="M822 935 L822 970" class="line"/>
 
-  <!-- Server block -->
-  <rect x="1025" y="960" width="440" height="72" rx="8" class="server"/>
-  <text x="1245" y="986" text-anchor="middle" class="box-title">Server Farm</text>
-  <text x="1245" y="1010" text-anchor="middle" class="small">DNS, mail, intranet, departmental DBs, backup DB, archive server</text>
+  <!-- Server farm, shown as separate systems so database and backup placement is clear -->
+  <rect x="1025" y="960" width="440" height="250" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+  <text x="1245" y="988" text-anchor="middle" class="box-title">Server Farm Behind SW-SERVER</text>
+  <text x="1245" y="1011" text-anchor="middle" class="small">All server traffic reaches these systems through the server farm switch</text>
   <path d="M1245 935 L1245 960" class="line"/>
+
+  <rect x="1048" y="1030" width="185" height="58" rx="8" class="server"/>
+  <text x="1140" y="1053" text-anchor="middle" class="box-title">Production Services</text>
+  <text x="1140" y="1074" text-anchor="middle" class="small">DNS .10, Mail .11, Intranet .12</text>
+
+  <rect x="1258" y="1030" width="185" height="58" rx="8" class="server"/>
+  <text x="1350" y="1053" text-anchor="middle" class="box-title">Database Servers</text>
+  <text x="1350" y="1074" text-anchor="middle" class="small">VLAN 40: .20, .21, .22</text>
+
+  <rect x="1048" y="1120" width="185" height="58" rx="8" class="server"/>
+  <text x="1140" y="1143" text-anchor="middle" class="box-title">Backup Database</text>
+  <text x="1140" y="1164" text-anchor="middle" class="small">VLAN 60: 192.168.60.10</text>
+
+  <rect x="1258" y="1120" width="185" height="58" rx="8" class="server"/>
+  <text x="1350" y="1143" text-anchor="middle" class="box-title">Backup File Server</text>
+  <text x="1350" y="1164" text-anchor="middle" class="small">VLAN 60: 192.168.60.11</text>
+
+  <path d="M1245 1016 L1140 1030" class="line"/>
+  <path d="M1245 1016 L1350 1030" class="line"/>
+  <path d="M1245 1016 L1140 1120" class="line"/>
+  <path d="M1245 1016 L1350 1120" class="line"/>
 
   <!-- VLAN legend -->
   <rect x="1125" y="120" width="390" height="260" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>

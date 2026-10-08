@@ -10,21 +10,20 @@ flowchart TB
     F1[SW-F1-MKT<br/>Floor 1 Access Switch]
     F2[SW-F2-SALES<br/>Floor 2 Access Switch]
     F3[SW-F3-SUPPORT<br/>Floor 3 Access Switch]
-    ServerSW[SW-SERVER<br/>Server Farm Switch]
+    ServerSW[SW-SERVER<br/>Server Farm Switch<br/>Connects VLAN 40 and VLAN 60 servers]
 
     MKT[Marketing PCs x20<br/>VLAN 10<br/>192.168.10.0/27]
     SALES[Sales PCs x25<br/>VLAN 20<br/>192.168.20.0/26]
     SUPPORT[General Support PCs x15<br/>VLAN 30<br/>192.168.30.0/27]
     ADMIN[Admin PC<br/>VLAN 50<br/>192.168.50.0/28]
 
-    DNS[DNS-SRV<br/>192.168.40.10]
-    MAIL[MAIL-SRV<br/>192.168.40.11]
-    WEB[INTRANET-SRV<br/>192.168.40.12]
-    DB1[MKT-DB-SRV<br/>192.168.40.20]
-    DB2[SALES-DB-SRV<br/>192.168.40.21]
-    DB3[SUPPORT-DB-SRV<br/>192.168.40.22]
-    BDB[BACKUP-DB-SRV<br/>192.168.60.10]
-    BFILE[BACKUP-FILE-SRV<br/>192.168.60.11]
+    subgraph ServerFarm[Server Farm]
+        direction TB
+        ProdServices[Production Services<br/>VLAN 40 Servers<br/>DNS .10, Mail .11, Intranet .12]
+        DBGroup[Database Servers<br/>VLAN 40 Servers<br/>MKT DB .20, Sales DB .21, Support DB .22]
+        BackupDB[Backup Database Server<br/>VLAN 60 Backup<br/>192.168.60.10]
+        BackupFile[Backup File/Archive Server<br/>VLAN 60 Backup<br/>192.168.60.11]
+    end
 
     Internet --- ISP
     ISP --- Edge
@@ -48,14 +47,10 @@ flowchart TB
     F3 --- SUPPORT
     F3 --- ADMIN
 
-    ServerSW --- DNS
-    ServerSW --- MAIL
-    ServerSW --- WEB
-    ServerSW --- DB1
-    ServerSW --- DB2
-    ServerSW --- DB3
-    ServerSW --- BDB
-    ServerSW --- BFILE
+    ServerSW --- ProdServices
+    ServerSW --- DBGroup
+    ServerSW --- BackupDB
+    ServerSW --- BackupFile
 
     classDef edge fill:#f7f7f7,stroke:#333,stroke-width:1px,color:#111;
     classDef core fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#111;
@@ -67,5 +62,4 @@ flowchart TB
     class Core1,Core2 core;
     class F1,F2,F3,ServerSW access;
     class MKT,SALES,SUPPORT,ADMIN users;
-    class DNS,MAIL,WEB,DB1,DB2,DB3,BDB,BFILE servers;
-
+    class ProdServices,DBGroup,BackupDB,BackupFile servers;
