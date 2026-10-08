@@ -1,0 +1,71 @@
+flowchart TB
+    Internet((Internet / ISP))
+    ISP[ISP-R1<br/>Internet Router]
+    Edge[EDGE-R1<br/>Company Edge Router<br/>NAT + Default Route]
+    FW[Firewall / Edge ACLs<br/>Optional ASA or Router ACLs]
+
+    Core1[CORE-SW1<br/>Multilayer Switch<br/>Inter-VLAN Routing]
+    Core2[CORE-SW2<br/>Redundant Multilayer Switch]
+
+    F1[SW-F1-MKT<br/>Floor 1 Access Switch]
+    F2[SW-F2-SALES<br/>Floor 2 Access Switch]
+    F3[SW-F3-SUPPORT<br/>Floor 3 Access Switch]
+    ServerSW[SW-SERVER<br/>Server Farm Switch]
+
+    MKT[Marketing PCs x20<br/>VLAN 10<br/>192.168.10.0/27]
+    SALES[Sales PCs x25<br/>VLAN 20<br/>192.168.20.0/26]
+    SUPPORT[General Support PCs x15<br/>VLAN 30<br/>192.168.30.0/27]
+    ADMIN[Admin PC<br/>VLAN 50<br/>192.168.50.0/28]
+
+    DNS[DNS-SRV<br/>192.168.40.10]
+    MAIL[MAIL-SRV<br/>192.168.40.11]
+    WEB[INTRANET-SRV<br/>192.168.40.12]
+    DB1[MKT-DB-SRV<br/>192.168.40.20]
+    DB2[SALES-DB-SRV<br/>192.168.40.21]
+    DB3[SUPPORT-DB-SRV<br/>192.168.40.22]
+    BDB[BACKUP-DB-SRV<br/>192.168.60.10]
+    BFILE[BACKUP-FILE-SRV<br/>192.168.60.11]
+
+    Internet --- ISP
+    ISP --- Edge
+    Edge --- FW
+    FW --- Core1
+    FW -. optional backup/core path .- Core2
+
+    Core1 === Core2
+
+    Core1 --- F1
+    Core2 --- F1
+    Core1 --- F2
+    Core2 --- F2
+    Core1 --- F3
+    Core2 --- F3
+    Core1 --- ServerSW
+    Core2 --- ServerSW
+
+    F1 --- MKT
+    F2 --- SALES
+    F3 --- SUPPORT
+    F3 --- ADMIN
+
+    ServerSW --- DNS
+    ServerSW --- MAIL
+    ServerSW --- WEB
+    ServerSW --- DB1
+    ServerSW --- DB2
+    ServerSW --- DB3
+    ServerSW --- BDB
+    ServerSW --- BFILE
+
+    classDef edge fill:#f7f7f7,stroke:#333,stroke-width:1px,color:#111;
+    classDef core fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#111;
+    classDef access fill:#dcfce7,stroke:#15803d,stroke-width:1px,color:#111;
+    classDef users fill:#fef3c7,stroke:#b45309,stroke-width:1px,color:#111;
+    classDef servers fill:#fee2e2,stroke:#b91c1c,stroke-width:1px,color:#111;
+
+    class Internet,ISP,Edge,FW edge;
+    class Core1,Core2 core;
+    class F1,F2,F3,ServerSW access;
+    class MKT,SALES,SUPPORT,ADMIN users;
+    class DNS,MAIL,WEB,DB1,DB2,DB3,BDB,BFILE servers;
+
