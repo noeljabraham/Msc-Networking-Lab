@@ -91,84 +91,441 @@ The design supports the coursework requirements for Marketing, Sales, General Su
 
 ---
 
-## 3. Build The Topology From Top To Bottom
+## 3. Build The Topology From Top To Bottom - Literal Click-By-Click Guide
 
-### Step 3.1 - Create the Packet Tracer file
+Complete this section in order. Do not configure IP addresses yet. First place, rename and connect every device so the physical topology is complete.
+
+Packet Tracer has two selection rows at the bottom-left:
+
+1. The first row contains broad categories such as **Network Devices** and **End Devices**.
+2. The second row contains subcategories such as **Routers** and **Switches**.
+3. The panel to the right shows the device models that can be dragged to the workspace.
+4. The lightning-bolt icon is **Connections**. Use **Automatically Choose Connection Type** for the instructions below. Packet Tracer will choose the suitable copper cable.
+
+### Step 3.1 - Create and save the empty project
 
 1. Open Cisco Packet Tracer.
-2. Create a new file.
-3. Save it as `MSS_Ltd_Final.pkt`.
-4. Place the devices from the final device list.
-5. Rename every device exactly as listed.
-6. Arrange the topology from top to bottom:
-   - INTERNET-SRV
-   - ISP-R1
-   - EDGE-R1
-   - CORE-SW1 and CORE-SW2
-   - Access switches
-   - Servers and PCs
-7. Add labels for:
-   - Floor 1 Marketing
-   - Floor 2 Sales
-   - Floor 3 General Support
-   - Server farm
-   - VLAN 10, 20, 30, 40, 50, 60 and 99
-   - WAN/Internet link
-8. Save the file.
+2. Click **File > New**.
+3. If Packet Tracer asks whether to save another file, make the appropriate choice.
+4. Click **File > Save As**.
+5. Enter `MSS_Ltd_Final.pkt` as the filename.
+6. Choose the coursework folder.
+7. Click **Save**.
+8. Make sure **Logical** is selected at the top-left of the workspace.
+9. Keep the workspace empty and continue to Step 3.2.
 
-### Step 3.2 - Cable the Internet and edge layer
+### Step 3.2 - Place and rename the external Internet server
 
-Use copper straight-through unless Packet Tracer requires another cable type.
+This will be the first and highest device on the page.
 
-| From | To |
-|---|---|
-| INTERNET-SRV Fa0 | ISP-R1 G0/1 |
-| ISP-R1 G0/0 | EDGE-R1 G0/2 |
-| EDGE-R1 G0/0 | CORE-SW1 Fa0/24 |
-| EDGE-R1 G0/1 | CORE-SW2 Fa0/24 |
+1. At the bottom-left, click **End Devices**.
+2. In the device list, find **Server**.
+3. Click the **Server** icon once.
+4. Move the pointer to the top-centre of the white workspace.
+5. Click once to place the server.
+6. Press `Esc` so Packet Tracer stops placing more servers.
+7. Click the newly placed server.
+8. Open its **Config** tab.
+9. In **Display Name**, delete the default name such as `Server0`.
+10. Enter `INTERNET-SRV`.
+11. Close the device window.
+12. Confirm that `INTERNET-SRV` appears under the server icon.
 
-### Step 3.3 - Cable the core switches
+### Step 3.3 - Place and rename the ISP router
 
-| From | To |
-|---|---|
-| CORE-SW1 Gi0/1 | CORE-SW2 Gi0/1 |
+1. At the bottom-left, click **Network Devices**.
+2. Click the **Routers** subcategory.
+3. Find and click the **2911** router.
+4. Move the pointer directly below `INTERNET-SRV`.
+5. Leave enough vertical space for a cable and click once to place it.
+6. Press `Esc`.
+7. Click the new router.
+8. Open **Config**.
+9. Change **Display Name** from `Router0` to `ISP-R1`.
+10. Close the device window.
 
-This link is the core-to-core trunk used for VLAN reachability and redundancy.
+### Step 3.4 - Connect INTERNET-SRV to ISP-R1
 
-### Step 3.4 - Cable the access switches to both cores
+1. Click the **Connections** lightning-bolt icon at the bottom-left.
+2. Click **Automatically Choose Connection Type**. It is the lightning-bolt connection option.
+3. Click `INTERNET-SRV` on the workspace.
+4. When the port list appears, click `FastEthernet0`.
+5. Click `ISP-R1`.
+6. When the port list appears, click `GigabitEthernet0/1`.
+7. Wait a few seconds.
+8. A cable should now run vertically from `INTERNET-SRV Fa0` to `ISP-R1 G0/1`.
+9. The link may be red until the router interface is configured and enabled later. This is normal.
+10. Press `Esc`.
 
-| Access switch port | Connects to | Core port |
+### Step 3.5 - Place and rename the company edge router
+
+1. At the bottom-left, click **Network Devices**.
+2. Click **Routers**.
+3. Click the **2911** router.
+4. Place this router directly below `ISP-R1`.
+5. Press `Esc`.
+6. Click the new router and open **Config**.
+7. Change **Display Name** to `EDGE-R1`.
+8. Close the device window.
+
+### Step 3.6 - Connect ISP-R1 to EDGE-R1
+
+1. Click **Connections**.
+2. Click **Automatically Choose Connection Type**.
+3. Click `ISP-R1`.
+4. Select `GigabitEthernet0/0`.
+5. Click `EDGE-R1`.
+6. Select `GigabitEthernet0/2`.
+7. Confirm that the cable appears between the two routers.
+8. Press `Esc`.
+
+The top of the topology should now read from top to bottom:
+
+```text
+INTERNET-SRV
+     |
+   ISP-R1
+     |
+  EDGE-R1
+```
+
+### Step 3.7 - Place and rename the two core switches
+
+Place these two devices on the same row below `EDGE-R1`.
+
+1. At the bottom-left, click **Network Devices**.
+2. Click **Switches**.
+3. Find the **3560-24PS** multilayer switch.
+4. Click **3560-24PS**.
+5. Place it below and slightly left of `EDGE-R1`.
+6. Press `Esc`.
+7. Click the switch and open **Config**.
+8. Change **Display Name** to `CORE-SW1`.
+9. Close the window.
+10. Click **Network Devices > Switches > 3560-24PS** again.
+11. Place the second switch below and slightly right of `EDGE-R1`, level with `CORE-SW1`.
+12. Press `Esc`.
+13. Click the second switch and open **Config**.
+14. Change **Display Name** to `CORE-SW2`.
+15. Close the window.
+
+The layout should resemble:
+
+```text
+             EDGE-R1
+              /   \
+       CORE-SW1---CORE-SW2
+```
+
+### Step 3.8 - Connect EDGE-R1 to both core switches
+
+Create the left connection:
+
+1. Click **Connections > Automatically Choose Connection Type**.
+2. Click `EDGE-R1` and select `GigabitEthernet0/0`.
+3. Click `CORE-SW1` and select `FastEthernet0/24`.
+4. Press `Esc`.
+
+Create the right connection:
+
+5. Click **Connections > Automatically Choose Connection Type**.
+6. Click `EDGE-R1` and select `GigabitEthernet0/1`.
+7. Click `CORE-SW2` and select `FastEthernet0/24`.
+8. Press `Esc`.
+
+### Step 3.9 - Connect the core switches to each other
+
+1. Click **Connections > Automatically Choose Connection Type**.
+2. Click `CORE-SW1` and select `GigabitEthernet0/1`.
+3. Click `CORE-SW2` and select `GigabitEthernet0/1`.
+4. Press `Esc`.
+5. The horizontal core-to-core cable will later become an 802.1Q trunk.
+
+### Step 3.10 - Place and rename the five access switches
+
+All access switches use the **2960-24TT** model. Place them in one row below the two core switches, from left to right in the order shown.
+
+For each row in the following table, repeat the placement procedure below.
+
+| Placement order | Display name | Position below the cores |
+|---:|---|---|
+| 1 | SW-MKT | Far left |
+| 2 | SW-SALES-A | Left-centre |
+| 3 | SW-SALES-B | Centre |
+| 4 | SW-SUPPORT | Right-centre |
+| 5 | SW-SERVER | Far right |
+
+Placement procedure for each switch:
+
+1. Click **Network Devices**.
+2. Click **Switches**.
+3. Click **2960-24TT**.
+4. Move to the required position in the access-switch row.
+5. Click once to place the switch.
+6. Press `Esc`.
+7. Click the switch and open **Config**.
+8. Enter the exact display name from the table.
+9. Close the device window.
+10. Repeat until all five switches are visible.
+
+### Step 3.11 - Connect SW-MKT to both core switches
+
+1. Click **Connections > Automatically Choose Connection Type**.
+2. Click `SW-MKT` and select `GigabitEthernet0/1`.
+3. Click `CORE-SW1` and select `FastEthernet0/1`.
+4. Press `Esc`.
+5. Click **Connections > Automatically Choose Connection Type** again.
+6. Click `SW-MKT` and select `GigabitEthernet0/2`.
+7. Click `CORE-SW2` and select `FastEthernet0/1`.
+8. Press `Esc`.
+
+### Step 3.12 - Connect SW-SALES-A to both core switches
+
+1. Connect `SW-SALES-A GigabitEthernet0/1` to `CORE-SW1 FastEthernet0/2`.
+2. Connect `SW-SALES-A GigabitEthernet0/2` to `CORE-SW2 FastEthernet0/2`.
+3. Use **Connections > Automatically Choose Connection Type** for each cable.
+4. Press `Esc` after each cable.
+
+### Step 3.13 - Connect SW-SALES-B to both core switches
+
+1. Connect `SW-SALES-B GigabitEthernet0/1` to `CORE-SW1 FastEthernet0/3`.
+2. Connect `SW-SALES-B GigabitEthernet0/2` to `CORE-SW2 FastEthernet0/3`.
+3. Use **Connections > Automatically Choose Connection Type** for each cable.
+4. Press `Esc` after each cable.
+
+### Step 3.14 - Connect SW-SUPPORT to both core switches
+
+1. Connect `SW-SUPPORT GigabitEthernet0/1` to `CORE-SW1 FastEthernet0/4`.
+2. Connect `SW-SUPPORT GigabitEthernet0/2` to `CORE-SW2 FastEthernet0/4`.
+3. Use **Connections > Automatically Choose Connection Type** for each cable.
+4. Press `Esc` after each cable.
+
+### Step 3.15 - Connect SW-SERVER to both core switches
+
+1. Connect `SW-SERVER GigabitEthernet0/1` to `CORE-SW1 FastEthernet0/5`.
+2. Connect `SW-SERVER GigabitEthernet0/2` to `CORE-SW2 FastEthernet0/5`.
+3. Use **Connections > Automatically Choose Connection Type** for each cable.
+4. Press `Esc` after each cable.
+
+### Step 3.16 - Place and rename the 20 Marketing PCs
+
+Place these PCs below `SW-MKT` in two neat rows of ten.
+
+1. Click **End Devices**.
+2. Click the **PC** icon.
+3. Click below `SW-MKT` to place the first PC.
+4. Continue clicking until 20 PCs have been placed. Packet Tracer keeps the PC tool selected.
+5. Press `Esc` after the twentieth PC.
+6. Click the first PC and open **Config**.
+7. Change **Display Name** to `MKT-PC01`.
+8. Close the window.
+9. Rename the remaining PCs consecutively as `MKT-PC02`, `MKT-PC03` and so on through `MKT-PC20`.
+10. Check that no number is missing or duplicated.
+
+### Step 3.17 - Connect every Marketing PC
+
+For every connection, click **Connections > Automatically Choose Connection Type**, select the PC's `FastEthernet0` port, then select the listed `SW-MKT` port.
+
+| PC | SW-MKT port | PC | SW-MKT port |
+|---|---|---|---|
+| MKT-PC01 | Fa0/1 | MKT-PC11 | Fa0/11 |
+| MKT-PC02 | Fa0/2 | MKT-PC12 | Fa0/12 |
+| MKT-PC03 | Fa0/3 | MKT-PC13 | Fa0/13 |
+| MKT-PC04 | Fa0/4 | MKT-PC14 | Fa0/14 |
+| MKT-PC05 | Fa0/5 | MKT-PC15 | Fa0/15 |
+| MKT-PC06 | Fa0/6 | MKT-PC16 | Fa0/16 |
+| MKT-PC07 | Fa0/7 | MKT-PC17 | Fa0/17 |
+| MKT-PC08 | Fa0/8 | MKT-PC18 | Fa0/18 |
+| MKT-PC09 | Fa0/9 | MKT-PC19 | Fa0/19 |
+| MKT-PC10 | Fa0/10 | MKT-PC20 | Fa0/20 |
+
+Connection example for `MKT-PC01`:
+
+1. Click **Connections > Automatically Choose Connection Type**.
+2. Click `MKT-PC01`.
+3. Select `FastEthernet0`.
+4. Click `SW-MKT`.
+5. Select `FastEthernet0/1`.
+6. Press `Esc`.
+7. Repeat the same six actions for each remaining row in the table.
+
+### Step 3.18 - Place and rename the 25 Sales PCs
+
+Place `SALES-PC01` to `SALES-PC24` below `SW-SALES-A`. Place `SALES-PC25` below `SW-SALES-B`.
+
+1. Click **End Devices > PC**.
+2. Place 24 PCs below `SW-SALES-A`, preferably in three rows of eight.
+3. Place one more PC below `SW-SALES-B`.
+4. Press `Esc`.
+5. Rename the first 24 PCs consecutively from `SALES-PC01` through `SALES-PC24`.
+6. Rename the PC below `SW-SALES-B` as `SALES-PC25`.
+7. Check the names before connecting them.
+
+### Step 3.19 - Connect every Sales PC
+
+Connect each PC's `FastEthernet0` port to the specified switch port.
+
+| PCs | Access switch | Switch ports |
 |---|---|---|
-| SW-MKT Gi0/1 | CORE-SW1 | Fa0/1 |
-| SW-MKT Gi0/2 | CORE-SW2 | Fa0/1 |
-| SW-SALES-A Gi0/1 | CORE-SW1 | Fa0/2 |
-| SW-SALES-A Gi0/2 | CORE-SW2 | Fa0/2 |
-| SW-SALES-B Gi0/1 | CORE-SW1 | Fa0/3 |
-| SW-SALES-B Gi0/2 | CORE-SW2 | Fa0/3 |
-| SW-SUPPORT Gi0/1 | CORE-SW1 | Fa0/4 |
-| SW-SUPPORT Gi0/2 | CORE-SW2 | Fa0/4 |
-| SW-SERVER Gi0/1 | CORE-SW1 | Fa0/5 |
-| SW-SERVER Gi0/2 | CORE-SW2 | Fa0/5 |
+| SALES-PC01 to SALES-PC24 | SW-SALES-A | Fa0/1 to Fa0/24 in matching numerical order |
+| SALES-PC25 | SW-SALES-B | Fa0/1 |
 
-### Step 3.5 - Cable users and servers
+Use this exact pattern:
 
-| Switch | Ports | Connected devices | VLAN |
-|---|---|---|---:|
-| SW-MKT | Fa0/1-20 | MKT-PC01 to MKT-PC20 | 10 |
-| SW-SALES-A | Fa0/1-24 | SALES-PC01 to SALES-PC24 | 20 |
-| SW-SALES-B | Fa0/1 | SALES-PC25 | 20 |
-| SW-SUPPORT | Fa0/1-15 | SUP-PC01 to SUP-PC15 | 30 |
-| SW-SERVER | Fa0/1-6 | INFRA-SRV, MAIL-SRV, INTRANET-SRV, MKT-DB-SRV, SALES-DB-SRV, SUPPORT-DB-SRV | 40 |
-| SW-SERVER | Fa0/7-8 | BACKUP-DB-SRV, ARCHIVE-SRV | 60 |
-| SW-SERVER | Fa0/9 | ADMIN-PC | 50 |
+1. `SALES-PC01 FastEthernet0` to `SW-SALES-A FastEthernet0/1`.
+2. `SALES-PC02 FastEthernet0` to `SW-SALES-A FastEthernet0/2`.
+3. Continue matching the PC number to the port number.
+4. Finish with `SALES-PC24 FastEthernet0` to `SW-SALES-A FastEthernet0/24`.
+5. Connect `SALES-PC25 FastEthernet0` to `SW-SALES-B FastEthernet0/1`.
+6. Use **Automatically Choose Connection Type** for every cable.
 
-Save the Packet Tracer file after cabling.
+### Step 3.20 - Place and rename the 15 Support PCs
+
+1. Click **End Devices > PC**.
+2. Place 15 PCs below `SW-SUPPORT`, preferably in three rows of five.
+3. Press `Esc`.
+4. Rename them consecutively from `SUP-PC01` through `SUP-PC15`.
+5. Check that the numbering is complete.
+
+### Step 3.21 - Connect every Support PC
+
+1. Connect `SUP-PC01 FastEthernet0` to `SW-SUPPORT FastEthernet0/1`.
+2. Connect `SUP-PC02 FastEthernet0` to `SW-SUPPORT FastEthernet0/2`.
+3. Continue matching each PC number to its switch port number.
+4. Finish with `SUP-PC15 FastEthernet0` to `SW-SUPPORT FastEthernet0/15`.
+5. Use **Connections > Automatically Choose Connection Type** for every cable.
+
+### Step 3.22 - Place and rename the eight internal servers
+
+Place the internal servers below `SW-SERVER`. The first six are normal server VLAN devices. The final two are backup VLAN devices.
+
+1. Click **End Devices**.
+2. Click **Server**.
+3. Place eight servers below `SW-SERVER` in two rows of four.
+4. Press `Esc`.
+5. Rename them exactly as shown, keeping this order:
+
+| Placement order | Display name | Role |
+|---:|---|---|
+| 1 | INFRA-SRV | DHCP and DNS |
+| 2 | MAIL-SRV | E-mail |
+| 3 | INTRANET-SRV | Internal website |
+| 4 | MKT-DB-SRV | Marketing database portal |
+| 5 | SALES-DB-SRV | Sales database portal |
+| 6 | SUPPORT-DB-SRV | Support database portal |
+| 7 | BACKUP-DB-SRV | Backup database |
+| 8 | ARCHIVE-SRV | Archive service |
+
+For each server, click it, open **Config**, change **Display Name**, and close the window.
+
+### Step 3.23 - Connect the internal servers
+
+Use **Automatically Choose Connection Type**. On every server, select `FastEthernet0`.
+
+| Server | SW-SERVER port | Later VLAN |
+|---|---|---:|
+| INFRA-SRV | Fa0/1 | 40 |
+| MAIL-SRV | Fa0/2 | 40 |
+| INTRANET-SRV | Fa0/3 | 40 |
+| MKT-DB-SRV | Fa0/4 | 40 |
+| SALES-DB-SRV | Fa0/5 | 40 |
+| SUPPORT-DB-SRV | Fa0/6 | 40 |
+| BACKUP-DB-SRV | Fa0/7 | 60 |
+| ARCHIVE-SRV | Fa0/8 | 60 |
+
+Complete the table from top to bottom, creating one cable at a time.
+
+### Step 3.24 - Place, rename and connect the Admin PC
+
+1. Click **End Devices**.
+2. Click **PC**.
+3. Place one PC near the internal servers, below `SW-SERVER`.
+4. Press `Esc`.
+5. Click the PC and open **Config**.
+6. Change **Display Name** to `ADMIN-PC`.
+7. Close the window.
+8. Click **Connections > Automatically Choose Connection Type**.
+9. Click `ADMIN-PC` and select `FastEthernet0`.
+10. Click `SW-SERVER` and select `FastEthernet0/9`.
+11. Press `Esc`.
+
+### Step 3.25 - Add the topology labels with Place Note
+
+Add these labels before configuration so the logical topology clearly shows the building areas, VLANs and WAN links.
+
+1. Click the **Place Note** tool in the Packet Tracer common tools toolbar.
+2. Click above `INTERNET-SRV` and enter `Internet / External Network`.
+3. Click beside the `INTERNET-SRV` to `ISP-R1` link and enter `Public LAN - 198.51.100.0/24`.
+4. Click beside the `ISP-R1` to `EDGE-R1` link and enter `WAN Link - 203.0.113.0/30`.
+5. Click beside `EDGE-R1` and enter `MSS Ltd Network Edge - NAT and Default Route`.
+6. Click beside the `EDGE-R1` to `CORE-SW1` link and enter `10.255.0.0/30`.
+7. Click beside the `EDGE-R1` to `CORE-SW2` link and enter `10.255.0.4/30`.
+8. Click above the two core switches and enter `Core / Distribution Layer - HSRP, STP and Inter-VLAN Routing`.
+9. Click beside the core-to-core link and enter `802.1Q Core Trunk - VLANs 10,20,30,40,50,60,99`.
+10. Click above the Marketing area and enter `Floor 1 - Marketing - VLAN 10 - 192.168.10.0/27`.
+11. Click above both Sales switches and enter `Floor 2 - Sales - VLAN 20 - 192.168.20.0/26`.
+12. Click above the Support area and enter `Floor 3 - General Support - VLAN 30 - 192.168.30.0/27`.
+13. Click above `SW-SERVER` and enter `Server Room / Server Farm`.
+14. Click beside the production servers and enter `Servers - VLAN 40 - 192.168.40.0/27`.
+15. Click beside `ADMIN-PC` and enter `Management - VLAN 50 - 192.168.50.0/28`.
+16. Click beside `BACKUP-DB-SRV` and `ARCHIVE-SRV` and enter `Protected Backup Network - VLAN 60 - 192.168.60.0/28`.
+17. Click near the access-switch uplinks and enter `Dual 802.1Q Trunks - Primary and Redundant Paths`.
+18. Click near the unused access-switch ports and enter `Native / Unused VLAN 99 - No User Hosts`.
+19. Drag notes as needed so they do not cover devices, cables or port indicators.
+20. Press `Ctrl+S` to save the labelled topology.
+
+### Step 3.26 - Check every physical connection before configuration
+
+Inspect the topology and confirm all of the following:
+
+1. `INTERNET-SRV Fa0` connects to `ISP-R1 G0/1`.
+2. `ISP-R1 G0/0` connects to `EDGE-R1 G0/2`.
+3. `EDGE-R1 G0/0` connects to `CORE-SW1 Fa0/24`.
+4. `EDGE-R1 G0/1` connects to `CORE-SW2 Fa0/24`.
+5. `CORE-SW1 Gi0/1` connects to `CORE-SW2 Gi0/1`.
+6. Every access switch has one uplink to each core switch.
+7. Marketing PCs use `SW-MKT Fa0/1-20`.
+8. Sales PCs 01-24 use `SW-SALES-A Fa0/1-24`.
+9. Sales PC 25 uses `SW-SALES-B Fa0/1`.
+10. Support PCs use `SW-SUPPORT Fa0/1-15`.
+11. Normal servers use `SW-SERVER Fa0/1-6`.
+12. Backup servers use `SW-SERVER Fa0/7-8`.
+13. `ADMIN-PC` uses `SW-SERVER Fa0/9`.
+14. No switch port has two cables connected to it.
+15. All devices have the exact display names used in this guide.
+16. Click **File > Save** or press `Ctrl+S`.
+
+Do not worry if router-facing links remain red at this stage. Router interfaces are administratively down until the later configuration commands apply `no shutdown`. Continue directly to Section 4 and follow the configuration order exactly as written; it brings the switching and routing foundation online before the servers and PCs request network service.
+
+### Step 3.27 - How to enter every Cisco CLI configuration in this guide
+
+Use this procedure whenever a later section says to configure a router or switch:
+
+1. Click the named router or switch on the workspace.
+2. Click the **CLI** tab.
+3. If the message `Continue with configuration dialog? [yes/no]:` appears, type `no` and press `Enter`.
+4. Press `Enter` once more if the CLI remains blank.
+5. Wait until a prompt such as `Switch>` or `Router>` appears.
+6. Enter the commands in the displayed code block from the first line to the last line, in order.
+7. Press `Enter` after every command.
+8. You may paste a complete code block into the CLI, but watch for error messages beginning with `%`.
+9. If Packet Tracer asks for confirmation while generating an RSA key, accept the stated hostname/domain and continue.
+10. When `write memory` is complete, look for `[OK]`.
+11. Run the verification commands printed after that device's configuration.
+12. Close the device window only after the expected interfaces and settings appear.
+13. Press `Ctrl+S` after finishing each device.
+
+Important: text such as `ReplaceEnableSecret`, `ReplaceAdminSecret` and `ReplaceConsoleSecret` is a placeholder. Replace it with passwords selected by the group, and use the same recorded values whenever the guide asks you to log in later.
 
 ---
 
 ## 4. Configure CORE-SW1
 
-Open CORE-SW1 CLI and enter:
+1. Click `CORE-SW1` on the workspace.
+2. Open **CLI**.
+3. Answer `no` if the initial configuration dialog appears.
+4. Wait for the `Switch>` prompt.
+5. Enter the following block in order:
 
 ```cisco
 enable
@@ -315,7 +672,11 @@ write memory
 
 ## 5. Configure CORE-SW2
 
-Open CORE-SW2 CLI and enter:
+1. Click `CORE-SW2` on the workspace.
+2. Open **CLI**.
+3. Answer `no` if the initial configuration dialog appears.
+4. Wait for the `Switch>` prompt.
+5. Enter the following block in order:
 
 ```cisco
 enable
@@ -469,6 +830,8 @@ Expected result:
 ## 6. Configure Access Switches
 
 Apply this common base configuration to every access switch. Change the hostname for each switch.
+
+For each access switch, click the switch, open **CLI**, answer `no` to the initial configuration dialog if it appears, and wait for `Switch>`. Enter the common block first. Replace `SWITCH-NAME` with the exact name of the switch currently open. Without closing the CLI, enter that switch's individual block from Steps 6.1 to 6.5. Run the check commands, save, close the window, and then move to the next access switch from left to right.
 
 ```cisco
 enable
@@ -715,7 +1078,11 @@ show spanning-tree
 
 ## 7. Configure EDGE-R1
 
-Open EDGE-R1 CLI and enter:
+1. Click `EDGE-R1` on the workspace.
+2. Open **CLI**.
+3. Answer `no` if the initial configuration dialog appears.
+4. Wait for the `Router>` prompt.
+5. Enter the following block in order:
 
 ```cisco
 enable
@@ -795,7 +1162,11 @@ show ip nat statistics
 
 ### Step 8.1 - Configure ISP-R1
 
-Open ISP-R1 CLI and enter:
+1. Click `ISP-R1` on the workspace.
+2. Open **CLI**.
+3. Answer `no` if the initial configuration dialog appears.
+4. Wait for the `Router>` prompt.
+5. Enter the following block in order:
 
 ```cisco
 enable
@@ -1460,4 +1831,3 @@ Save versions as you build, for example:
 - `MSS_04_Services.pkt`
 - `MSS_05_Security.pkt`
 - `MSS_06_Final_Tested.pkt`
-
