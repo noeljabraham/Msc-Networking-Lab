@@ -160,9 +160,9 @@ Record the expected assets before scanning. This prevents an expected service fr
 For the virtual lab, assign only the minimum number of target VMs needed. A practical mapping is:
 
 - Kali Linux VM: authorised test workstation.
-- Linux server VM A: represents `INTRANET-SRV`.
-- Linux server VM B: represents a database portal or archive service.
-- Optional Windows VM: represents an employee endpoint.
+- Windows Server VM with IIS: represents `INTRANET-SRV`.
+- Optional second Windows Server VM: represents a database portal or archive service.
+- Optional Windows client VM: represents an employee endpoint.
 
 Use the same logical roles, but record the real VM addresses separately if the hypervisor cannot reproduce the Packet Tracer subnets.
 
@@ -418,48 +418,287 @@ Then document that failure of the only `EDGE-R1` or the only ISP connection stil
 
 ## 8. Phase 2 - Build The Isolated Kali Test Lab
 
-### 8.1 Recommended minimum lab
+Packet Tracer's servers are simulated devices. They cannot be scanned directly by a real Kali VM. In this external lab, a Windows Server VM becomes the real test implementation of the Packet Tracer `INTRANET-SRV`.
 
-Use VirtualBox, VMware, Hyper-V, GNS3, or EVE-NG:
+```text
+Packet Tracer design                 External vulnerability lab
 
-| VM | Role | Network mode |
-|---|---|---|
-| Kali Linux | Tester | Internal/host-only test network |
-| Linux target server | Intranet/web target | Internal/host-only test network |
-| Optional second server | Mail/archive target | Internal/host-only test network |
-| Optional Windows client | Employee endpoint | Internal/host-only test network |
+MKT-PC01 or ADMIN-PC                 Kali Linux VM
+        |                                  |
+CORE-SW1 / CORE-SW2                 Isolated virtual network
+        |                                  |
+INTRANET-SRV                        Windows Server with IIS
+192.168.40.12                       192.168.56.20 initially
+```
 
-Create deliberately safe test content only. Do not copy real employee data or credentials into the lab.
+The first lab uses a simple `192.168.56.0/24` subnet. The different address does not change the server's role. Later, the VM may be moved to `192.168.40.12/27` behind a virtual router to reproduce the MSS Ltd subnets more closely.
 
-### 8.2 Isolation check
+### 8.1 What Windows Server Represents
 
-Before scanning:
+For the minimum coursework demonstration, use one Windows Server VM as:
+
+```text
+Packet Tracer device: INTRANET-SRV
+Packet Tracer address: 192.168.40.12/27
+External-lab implementation: Windows Server with IIS
+Initial external-lab address: 192.168.56.20/24
+```
+
+This allows Kali to perform real Nmap, Nikto, Wireshark/TShark, and vulnerability-scanner tests against a real web service that represents the MSS Ltd intranet.
+
+Windows Server can represent additional Packet Tracer servers later:
+
+| Packet Tracer server | Windows Server role/application |
+|---|---|
+| `INTRANET-SRV` | IIS Web Server |
+| `INFRA-SRV` | Windows DNS and DHCP roles |
+| Department database server | IIS application and, if required, SQL Server Express |
+| `ARCHIVE-SRV` | Windows file services or an authorised secure-transfer service |
+| Central authentication proposal | Active Directory Domain Services and Group Policy |
+
+Do not install every role for the first test. Begin with IIS only so that the exposed ports and findings are easy to interpret.
+
+### 8.2 Recommended Minimum Lab
+
+Use VirtualBox, VMware, Hyper-V, UTM, or another locally approved hypervisor:
+
+| VM | Function | Virtual network | Address |
+|---|---|---|---|
+| Kali Linux | Authorised security tester | `MSS-LAB` | `192.168.56.10/24` |
+| Windows Server | Real version of `INTRANET-SRV` | `MSS-LAB` | `192.168.56.20/24` |
+
+Configure both VM adapters as **Internal Network** or **Host-only Network** and give the network the exact same name, such as `MSS-LAB`.
+
+Do not use Bridged networking. Bridged mode could expose scans to the home, university, or workplace network.
+
+Create deliberately safe test content only. Do not copy real employee information, real credentials, or production data into the lab.
+
+### 8.3 Configure The Kali Address
+
+Start Kali and identify its interface and connection name:
 
 ```bash
-ip address
+ip -brief address
+nmcli connection show
+```
+
+Configure the `MSS-LAB` connection. Replace `Wired connection 1` only if Kali displays a different connection name:
+
+```bash
+sudo nmcli connection modify "Wired connection 1" \
+  ipv4.method manual \
+  ipv4.addresses 192.168.56.10/24 \
+  ipv4.gateway "" \
+  ipv4.dns ""
+
+sudo nmcli connection up "Wired connection 1"
+```
+
+Verify:
+
+```bash
+ip -brief address
 ip route
 ```
 
-Verify that the Kali route table points only to the lab network and has no route to university or unrelated networks. Record the output.
+The route table should show the isolated `192.168.56.0/24` network. It should not route test traffic to university or unrelated networks.
 
-On the target, record its lab IP and enabled services. Take a snapshot named:
+### 8.4 Configure The Windows Server Address
 
-```text
-before-mss-vulnerability-test
-```
-
-### 8.3 Command placeholders
-
-In the commands below, replace only these placeholders:
+On Windows Server, open:
 
 ```text
-<KALI_IP>       authorised Kali lab address
-<TARGET_IP>     one authorised target VM
-<LAB_SUBNET>    isolated subnet, for example 192.168.56.0/24
-<WEB_URL>       authorised lab URL, for example http://192.168.56.20
+Control Panel
+> Network and Internet
+> Network Connections
+> Ethernet Properties
+> Internet Protocol Version 4 (TCP/IPv4)
+> Properties
 ```
 
-Never substitute a public or university address.
+Enter:
+
+```text
+IP address:      192.168.56.20
+Subnet mask:     255.255.255.0
+Default gateway: leave empty
+DNS server:      leave empty for the first test
+```
+
+Alternatively, use an Administrator PowerShell window after confirming the adapter name:
+
+```powershell
+Get-NetAdapter
+New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.56.20 -PrefixLength 24
+```
+
+Verify:
+
+```powershell
+Get-NetIPAddress -AddressFamily IPv4
+Get-NetRoute -AddressFamily IPv4
+```
+
+### 8.5 Test Basic Connectivity
+
+From Kali:
+
+```bash
+ping -c 4 192.168.56.20
+```
+
+Windows Firewall may block ping even when the network is working. Do not disable the firewall. If ping fails, continue after IIS installation and test TCP/80 instead.
+
+If neither ping nor TCP/80 works, verify:
+
+1. Both VMs are running.
+2. Both adapters use the same `MSS-LAB` internal/host-only network.
+3. Kali uses `192.168.56.10/24`.
+4. Windows Server uses `192.168.56.20/24`.
+5. Neither adapter is using Bridged mode.
+
+### 8.6 Install IIS To Create The Real Intranet Target
+
+Open PowerShell as Administrator on Windows Server:
+
+```powershell
+Install-WindowsFeature Web-Server -IncludeManagementTools
+Get-Service W3SVC
+Start-Service W3SVC
+```
+
+Create an MSS Ltd test page:
+
+```powershell
+Set-Content -Path "C:\inetpub\wwwroot\index.html" -Value @"
+<!DOCTYPE html>
+<html>
+<head><title>MSS Ltd Test Intranet</title></head>
+<body>
+<h1>MSS Ltd Test Intranet</h1>
+<p>Authorised vulnerability-assessment laboratory.</p>
+</body>
+</html>
+"@
+```
+
+Create a narrowly scoped inbound firewall rule if IIS installation did not create an enabled HTTP rule:
+
+```powershell
+New-NetFirewallRule `
+  -DisplayName "MSS Lab IIS HTTP" `
+  -Direction Inbound `
+  -Protocol TCP `
+  -LocalPort 80 `
+  -RemoteAddress 192.168.56.0/24 `
+  -Action Allow
+```
+
+Do not disable Windows Defender Firewall. Permit only the service and source network required by the test.
+
+Verify the listening service:
+
+```powershell
+Get-NetTCPConnection -State Listen |
+  Sort-Object LocalPort |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+```
+
+From Kali, open:
+
+```text
+http://192.168.56.20
+```
+
+Or test with:
+
+```bash
+curl -I http://192.168.56.20
+```
+
+Expected result: an HTTP response from Microsoft IIS and the MSS Ltd test page in a browser.
+
+### 8.7 Take Clean Snapshots
+
+Before scanning, shut down or safely pause the VMs and create:
+
+```text
+Kali-before-MSS-testing
+Windows-INTRANET-clean-IIS
+```
+
+Record the Windows Server version, installed IIS role, addresses, enabled services, and snapshot names in the evidence log.
+
+### 8.8 Run The First Kali Baseline
+
+From Kali:
+
+```bash
+nmap -sn 192.168.56.0/24
+```
+
+Windows may ignore ping discovery. Scan the known authorised target with `-Pn`:
+
+```bash
+nmap -Pn -sT -sV --version-light -T3 \
+  -p 80,135,139,443,445,3389 \
+  192.168.56.20 -oA mss-windows-baseline
+```
+
+Interpret the result against the installed roles. TCP/80 is expected for the initial IIS test. Other open ports must be explained, restricted, or disabled if they are unnecessary.
+
+Run the web checks:
+
+```bash
+nikto -h http://192.168.56.20 \
+  -Format txt -output mss-windows-nikto.txt
+
+curl -I http://192.168.56.20
+```
+
+Validate every Nikto observation manually before calling it a confirmed finding.
+
+### 8.9 Reproduce The MSS Ltd Subnets Later
+
+The flat `192.168.56.0/24` lab proves that Kali can test the representative Windows Server. To reproduce segmentation, add a virtual router/firewall and create separate internal networks:
+
+| Virtual network | Subnet | Example system |
+|---|---|---|
+| `MSS-MARKETING` | `192.168.10.0/27` | Kali acting as an ordinary user at `192.168.10.30` |
+| `MSS-SERVERS` | `192.168.40.0/27` | Windows `INTRANET-SRV` at `192.168.40.12` |
+| `MSS-MANAGEMENT` | `192.168.50.0/28` | Kali acting as an administrator at `192.168.50.14` |
+| `MSS-BACKUP` | `192.168.60.0/28` | Optional backup/archive VM at `192.168.60.11` |
+
+Give the virtual router `.1` in each subnet. Configure rules equivalent to the Packet Tracer policy:
+
+| Source | Destination/service | Expected result |
+|---|---|---|
+| Marketing | Intranet HTTP/HTTPS | Allow |
+| Marketing | Server management/SSH/RDP | Deny |
+| Marketing | Backup network | Deny |
+| Management | Approved server management | Allow |
+| Management | Backup network | Allow |
+
+Move Kali's adapter between `MSS-MARKETING` and `MSS-MANAGEMENT` to test the ordinary-user and authorised-administrator perspectives. Do not attach it to both networks simultaneously unless the test plan requires it; otherwise Kali could accidentally become an alternate path between security zones.
+
+### 8.10 How To Describe This In The Report
+
+Use wording similar to:
+
+> Cisco Packet Tracer was used to validate the MSS Ltd topology, VLANs, ACLs, management restrictions, and redundancy. Because Packet Tracer devices are internal simulations and cannot be scanned directly by an external Kali VM, a Windows Server VM running IIS was created as a representative implementation of `INTRANET-SRV`. Kali assessed this authorised VM on an isolated virtual network. Findings were mapped to the equivalent MSS Ltd server role and were not presented as direct scans of the Packet Tracer device.
+
+### 8.11 Command Placeholders Used Below
+
+In the remaining phases, the initial Windows Server lab uses:
+
+```text
+<KALI_IP>       192.168.56.10
+<TARGET_IP>     192.168.56.20
+<LAB_SUBNET>    192.168.56.0/24
+<WEB_URL>       http://192.168.56.20
+```
+
+Replace these only when the authorised lab uses different addresses. Never substitute a public, university, workplace, or unrelated home-network address.
 
 ---
 
