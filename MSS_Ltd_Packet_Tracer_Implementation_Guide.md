@@ -1,5 +1,7 @@
 # MSS Ltd Packet Tracer Implementation Guide
 
+> **Current firewall-integrated build:** Use `implementation-steps.md` or `MSS_Ltd_Complete_Beginner_Implementation_Guide.md` for the exact topology, addressing and commands. They place `FW-ASA1` between `EDGE-R1` and the redundant core switches. This shorter overview is retained for coursework structure and background only.
+
 ## 1. Coursework Goal
 
 Design and implement a secure LAN for MSS Ltd in Cisco Packet Tracer. The company has three departments on three floors:
@@ -31,7 +33,7 @@ Use a hierarchical LAN design:
 - Access layer: one switch per floor for user PCs.
 - Core/distribution layer: two multilayer switches for routing, VLAN gateways, and redundancy.
 - Server farm: dedicated server switch and server VLANs.
-- Edge layer: company router/firewall connected to ISP router/cloud.
+- Edge layer: an ASA stateful firewall between the redundant core and the company edge router, with the edge router connected to the ISP.
 
 This gives a realistic medium-sized company design and helps you justify topology, cabling, security, interconnectivity, outside connection, and future expansion.
 
@@ -43,6 +45,7 @@ This gives a realistic medium-sized company design and helps you justify topolog
 |---|---|---:|---|
 | ISP-R1 | Router | 1 | Simulates Internet service provider |
 | EDGE-R1 | Router | 1 | Company edge router, NAT, default route |
+| FW-ASA1 | ASA 5505 firewall | 1 | Stateful perimeter inspection and outside access policy |
 | CORE-SW1 | Multilayer switch | 1 | Main inter-VLAN routing and core switching |
 | CORE-SW2 | Multilayer switch | 1 | Redundant core switch |
 | SW-F1-MKT | Access switch | 1 | Marketing floor switch |
@@ -102,7 +105,7 @@ Use this in your report:
 - Fibre or high-speed copper uplinks between floor switches and core switches.
 - Trunk links between access switches and core switches.
 - Trunk links between server switch and core switches.
-- Edge router connects to the core and ISP router.
+- The firewall connects both core switches to the edge router; the edge router connects to the ISP.
 
 Justification:
 
@@ -114,7 +117,7 @@ Justification:
 
 ### Step 1: Create The Topology
 
-1. Add two routers: `ISP-R1` and `EDGE-R1`.
+1. Add two routers, `ISP-R1` and `EDGE-R1`, plus one ASA 5505 firewall named `FW-ASA1`.
 2. Add two multilayer switches: `CORE-SW1` and `CORE-SW2`.
 3. Add four access switches:
    - `SW-F1-MKT`
@@ -139,7 +142,7 @@ Suggested links:
 - Each floor switch to both `CORE-SW1` and `CORE-SW2`.
 - `SW-SERVER` to both core switches.
 - `CORE-SW1` to `CORE-SW2`.
-- `CORE-SW1` to `EDGE-R1`.
+- Both core switches to `FW-ASA1`, then `FW-ASA1` to `EDGE-R1`.
 - `EDGE-R1` to `ISP-R1`.
 
 For redundancy, connect each access switch to both core switches.
@@ -353,55 +356,20 @@ On sample PCs:
 - Configure e-mail clients.
 - Send test e-mails between departments.
 
-### Step 11: Configure Internet Edge Routing
+### Step 11: Configure Firewall And Internet Edge Routing
 
-Example between `CORE-SW1` and `EDGE-R1`:
+Use the firewall-integrated routed links below:
 
-| Link | CORE-SW1 | EDGE-R1 |
-|---|---|---|
-| Core-edge transit | 10.0.0.1/30 | 10.0.0.2/30 |
+| Link | Addressing |
+|---|---|
+| CORE-SW1 Fa0/24 to FW-ASA1 E0/1 | CORE `.2/29`, ASA inside `.1/29` |
+| CORE-SW2 Fa0/24 to FW-ASA1 E0/2 | CORE `.3/29`, same ASA inside VLAN; transit HSRP `.4/29` |
+| FW-ASA1 E0/0 to EDGE-R1 G0/0 | ASA outside `10.255.1.2/30`, EDGE `10.255.1.1/30` |
+| EDGE-R1 G0/2 to ISP-R1 G0/0 | EDGE `203.0.113.2/30`, ISP `203.0.113.1/30` |
 
-On `CORE-SW1`:
+Configure `FW-ASA1` with inside security level 100, outside security level 0, a default route to `10.255.1.1`, an internal summary route through HSRP address `10.255.0.4`, an outside deny policy, ICMP inspection and SSH restricted to VLAN 50. Keep NAT overload on `EDGE-R1` and route `192.168.0.0/16` from the edge router to `10.255.1.2`.
 
-```text
-enable
-configure terminal
-interface gigabitEthernet0/1
- no switchport
- ip address 10.0.0.1 255.255.255.252
- no shutdown
-exit
-ip route 0.0.0.0 0.0.0.0 10.0.0.2
-end
-write memory
-```
-
-On `EDGE-R1`:
-
-```text
-enable
-configure terminal
-interface gigabitEthernet0/0
- ip address 10.0.0.2 255.255.255.252
- ip nat inside
- no shutdown
-
-interface serial0/0/0
- ip address 203.0.113.2 255.255.255.252
- ip nat outside
- no shutdown
-
-ip route 192.168.0.0 255.255.0.0 10.0.0.1
-ip route 0.0.0.0 0.0.0.0 203.0.113.1
-
-access-list 1 permit 192.168.0.0 0.0.255.255
-ip nat inside source list 1 interface serial0/0/0 overload
-
-end
-write memory
-```
-
-Adjust interface names depending on the router model you use.
+Use the exact commands in [MSS_Ltd_Complete_Beginner_Implementation_Guide.md](MSS_Ltd_Complete_Beginner_Implementation_Guide.md#101-fw-asa1-stateful-firewall) or [implementation-steps.md](implementation-steps.md#71-configure-fw-asa1). Do not reuse the earlier direct core-to-edge addressing after installing the firewall.
 
 ### Step 12: Configure ISP Router
 
@@ -410,7 +378,7 @@ On `ISP-R1`:
 ```text
 enable
 configure terminal
-interface serial0/0/0
+interface gigabitEthernet0/0
  ip address 203.0.113.1 255.255.255.252
  no shutdown
 exit
@@ -419,7 +387,6 @@ interface loopback0
  ip address 8.8.8.8 255.255.255.255
 exit
 
-ip route 192.168.0.0 255.255.0.0 203.0.113.2
 end
 write memory
 ```

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1500" viewBox="0 0 1800 1500" role="img" aria-labelledby="title desc">
   <title id="title">MSS Ltd Implemented Secure LAN Architecture</title>
-  <desc id="desc">The implemented Packet Tracer topology with an external test server, ISP and edge routers, two core switches, five dual-connected access switches, three departmental VLANs, management VLAN, production servers, and protected backup servers.</desc>
+  <desc id="desc">The implemented Packet Tracer topology with an external test server, ISP and edge routers, a stateful ASA perimeter firewall, two core switches, five dual-connected access switches, three departmental VLANs, management VLAN, production servers, and protected backup servers.</desc>
   <defs>
     <style>
       .title { font: 700 34px Arial, sans-serif; fill: #111827; }
@@ -10,6 +10,7 @@
       .small { font: 400 13px Arial, sans-serif; fill: #4b5563; }
       .label { font: 700 13px Arial, sans-serif; fill: #111827; }
       .external { fill: #f9fafb; stroke: #374151; stroke-width: 2; }
+      .firewall { fill: #ffedd5; stroke: #c2410c; stroke-width: 4; }
       .core { fill: #dbeafe; stroke: #1d4ed8; stroke-width: 3; }
       .access { fill: #dcfce7; stroke: #15803d; stroke-width: 2; }
       .user { fill: #fef3c7; stroke: #b45309; stroke-width: 2; }
@@ -24,7 +25,7 @@
 
   <rect x="0" y="0" width="1800" height="1500" fill="#ffffff"/>
   <text x="50" y="55" class="title">MSS Ltd Implemented Secure LAN Architecture</text>
-  <text x="50" y="85" class="subtitle">Exact Packet Tracer design: Internet edge, dual core, five access switches, three floors, server room, management, and protected backup VLAN</text>
+  <text x="50" y="85" class="subtitle">Exact Packet Tracer design: Internet edge, ASA firewall, dual core, five access switches, three floors, server room, management, and protected backup VLAN</text>
 
   <!-- Internet and WAN -->
   <rect x="720" y="115" width="360" height="82" rx="8" class="external"/>
@@ -48,31 +49,41 @@
   <rect x="925" y="357" width="220" height="28" rx="4" fill="#ffffff"/>
   <text x="938" y="376" class="label">WAN link - 203.0.113.0/30</text>
 
+  <!-- Stateful perimeter firewall -->
+  <rect x="720" y="530" width="360" height="95" rx="8" class="firewall"/>
+  <text x="900" y="560" text-anchor="middle" class="box-title">FW-ASA1 - ASA 5505</text>
+  <text x="900" y="585" text-anchor="middle" class="box-text">Stateful inspection and perimeter ACL</text>
+  <text x="900" y="608" text-anchor="middle" class="small">Outside 10.255.1.2/30 | Inside 10.255.0.1/29 | Core HSRP .4</text>
+
+  <path d="M900 500 L900 530" class="line"/>
+  <rect x="925" y="502" width="220" height="25" rx="4" fill="#ffffff"/>
+  <text x="938" y="520" class="label">Firewall link - 10.255.1.0/30</text>
+
   <!-- Core layer -->
-  <rect x="600" y="565" width="600" height="32" rx="4" fill="#ffffff"/>
-  <text x="900" y="586" text-anchor="middle" class="label">Core / Distribution Layer - HSRP, Rapid PVST+ and Inter-VLAN Routing</text>
+  <rect x="600" y="655" width="600" height="32" rx="4" fill="#ffffff"/>
+  <text x="900" y="676" text-anchor="middle" class="label">Core / Distribution Layer - HSRP, Rapid PVST+ and Inter-VLAN Routing</text>
 
-  <rect x="400" y="610" width="380" height="110" rx="8" class="core"/>
-  <text x="590" y="642" text-anchor="middle" class="box-title">CORE-SW1 - 3560-24PS</text>
-  <text x="590" y="667" text-anchor="middle" class="box-text">SVIs, HSRP and inter-VLAN routing</text>
-  <text x="590" y="692" text-anchor="middle" class="small">Fa0/24: 10.255.0.1/30</text>
+  <rect x="400" y="700" width="380" height="110" rx="8" class="core"/>
+  <text x="590" y="732" text-anchor="middle" class="box-title">CORE-SW1 - 3560-24PS</text>
+  <text x="590" y="757" text-anchor="middle" class="box-text">SVIs, HSRP and inter-VLAN routing</text>
+  <text x="590" y="782" text-anchor="middle" class="small">Fa0/24: 10.255.0.2/29</text>
 
-  <rect x="1020" y="610" width="380" height="110" rx="8" class="core"/>
-  <text x="1210" y="642" text-anchor="middle" class="box-title">CORE-SW2 - 3560-24PS</text>
-  <text x="1210" y="667" text-anchor="middle" class="box-text">SVIs, HSRP and inter-VLAN routing</text>
-  <text x="1210" y="692" text-anchor="middle" class="small">Fa0/24: 10.255.0.5/30</text>
+  <rect x="1020" y="700" width="380" height="110" rx="8" class="core"/>
+  <text x="1210" y="732" text-anchor="middle" class="box-title">CORE-SW2 - 3560-24PS</text>
+  <text x="1210" y="757" text-anchor="middle" class="box-text">SVIs, HSRP and inter-VLAN routing</text>
+  <text x="1210" y="782" text-anchor="middle" class="small">Fa0/24: 10.255.0.3/29</text>
 
-  <path d="M850 500 L590 610" class="trunk"/>
-  <text x="335" y="525" class="label">10.255.0.0/30</text>
-  <text x="335" y="547" class="small">EDGE G0/0 to CORE-SW1 Fa0/24</text>
+  <path d="M850 625 L590 700" class="trunk"/>
+  <text x="335" y="642" class="label">Inside transit - 10.255.0.0/29</text>
+  <text x="335" y="664" class="small">ASA E0/1 to CORE-SW1 Fa0/24</text>
 
-  <path d="M950 500 L1210 610" class="trunk"/>
-  <text x="1250" y="525" class="label">10.255.0.4/30</text>
-  <text x="1250" y="547" class="small">EDGE G0/1 to CORE-SW2 Fa0/24</text>
+  <path d="M950 625 L1210 700" class="trunk"/>
+  <text x="1250" y="642" class="label">Inside transit - 10.255.0.0/29</text>
+  <text x="1250" y="664" class="small">ASA E0/2 to CORE-SW2 Fa0/24</text>
 
-  <path d="M780 665 L1020 665" class="trunk"/>
-  <rect x="795" y="625" width="210" height="28" rx="4" fill="#ffffff"/>
-  <text x="900" y="644" text-anchor="middle" class="label">Gi0/1 802.1Q core trunk</text>
+  <path d="M780 755 L1020 755" class="trunk"/>
+  <rect x="795" y="715" width="210" height="28" rx="4" fill="#ffffff"/>
+  <text x="900" y="734" text-anchor="middle" class="label">Gi0/1 802.1Q core trunk</text>
   <!-- Access layer -->
   <rect x="30" y="860" width="300" height="105" rx="8" class="access"/>
   <text x="180" y="892" text-anchor="middle" class="box-title">SW-MKT</text>
@@ -100,22 +111,22 @@
   <text x="1580" y="942" text-anchor="middle" class="small">VLANs 40, 50 and 60</text>
 
   <!-- Dual uplinks from both cores -->
-  <path d="M470 720 L180 860" class="trunk"/>
-  <path d="M1070 720 L180 860" class="redundant"/>
-  <path d="M525 720 L530 860" class="trunk"/>
-  <path d="M1120 720 L530 860" class="redundant"/>
-  <path d="M590 720 L880 860" class="trunk"/>
-  <path d="M1170 720 L880 860" class="redundant"/>
-  <path d="M655 720 L1230 860" class="trunk"/>
-  <path d="M1230 720 L1230 860" class="redundant"/>
-  <path d="M720 720 L1580 860" class="trunk"/>
-  <path d="M1320 720 L1580 860" class="redundant"/>
+  <path d="M470 810 L180 860" class="trunk"/>
+  <path d="M1070 810 L180 860" class="redundant"/>
+  <path d="M525 810 L530 860" class="trunk"/>
+  <path d="M1120 810 L530 860" class="redundant"/>
+  <path d="M590 810 L880 860" class="trunk"/>
+  <path d="M1170 810 L880 860" class="redundant"/>
+  <path d="M655 810 L1230 860" class="trunk"/>
+  <path d="M1230 810 L1230 860" class="redundant"/>
+  <path d="M720 810 L1580 860" class="trunk"/>
+  <path d="M1320 810 L1580 860" class="redundant"/>
 
   <!-- Backplated annotations are drawn after the uplinks so cables do not cross the text -->
-  <rect x="665" y="732" width="470" height="28" rx="4" fill="#ffffff"/>
-  <text x="900" y="751" text-anchor="middle" class="small">VLANs 10, 20, 30, 40, 50, 60 and native VLAN 99</text>
-  <rect x="595" y="775" width="610" height="30" rx="4" fill="#ffffff"/>
-  <text x="900" y="795" text-anchor="middle" class="label">Access Layer - every switch has primary and redundant 802.1Q uplinks</text>
+  <rect x="665" y="815" width="470" height="28" rx="4" fill="#ffffff"/>
+  <text x="900" y="834" text-anchor="middle" class="small">VLANs 10, 20, 30, 40, 50, 60 and native VLAN 99</text>
+  <rect x="595" y="842" width="610" height="18" rx="4" fill="#ffffff"/>
+  <text x="900" y="856" text-anchor="middle" class="label">Access layer - primary and redundant 802.1Q uplinks</text>
 
   <!-- Department groups -->
   <rect x="30" y="1050" width="300" height="105" rx="8" class="user"/>

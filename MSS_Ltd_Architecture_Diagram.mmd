@@ -2,6 +2,7 @@ flowchart TB
     InternetServer[INTERNET-SRV<br/>External Internet Test Server<br/>198.51.100.10/24]
     ISP[ISP-R1<br/>2911 ISP Router<br/>G0/1: 198.51.100.1/24]
     Edge[EDGE-R1<br/>2911 Company Edge Router<br/>NAT Overload + Default Route]
+    Firewall[FW-ASA1<br/>ASA 5505 Stateful Firewall<br/>Inside/Outside Inspection + Perimeter ACL]
 
     Core1[CORE-SW1<br/>3560-24PS Multilayer Switch<br/>SVIs + HSRP + Inter-VLAN Routing]
     Core2[CORE-SW2<br/>3560-24PS Multilayer Switch<br/>SVIs + HSRP + Inter-VLAN Routing]
@@ -26,8 +27,9 @@ flowchart TB
 
     InternetServer -- "Public LAN 198.51.100.0/24" --> ISP
     ISP -- "WAN 203.0.113.0/30" --> Edge
-    Edge -- "G0/0 to Fa0/24 - 10.255.0.0/30" --> Core1
-    Edge -- "G0/1 to Fa0/24 - 10.255.0.4/30" --> Core2
+    Edge -- "G0/0 to E0/0 - 10.255.1.0/30" --> Firewall
+    Firewall -- "E0/1 to Fa0/24 - 10.255.0.0/29, HSRP .4" --> Core1
+    Firewall -- "E0/2 to Fa0/24 - 10.255.0.0/29, HSRP .4" --> Core2
     Core1 == "Gi0/1 802.1Q core trunk - VLANs 10,20,30,40,50,60,99" ==> Core2
 
     Core1 -- "Primary trunk" --> MktSW
@@ -54,6 +56,7 @@ flowchart TB
     Core2 -. "Trunk native VLAN" .-> Native
 
     classDef external fill:#f9fafb,stroke:#374151,stroke-width:2px,color:#111827;
+    classDef firewall fill:#ffedd5,stroke:#c2410c,stroke-width:4px,color:#111827;
     classDef core fill:#dbeafe,stroke:#1d4ed8,stroke-width:3px,color:#111827;
     classDef access fill:#dcfce7,stroke:#15803d,stroke-width:2px,color:#111827;
     classDef users fill:#fef3c7,stroke:#b45309,stroke-width:2px,color:#111827;
@@ -62,6 +65,7 @@ flowchart TB
     classDef native fill:#f3f4f6,stroke:#6b7280,stroke-width:2px,color:#111827;
 
     class InternetServer,ISP,Edge external;
+    class Firewall firewall;
     class Core1,Core2 core;
     class MktSW,SalesA,SalesB,SupportSW,ServerSW access;
     class MKT,SALES,SUPPORT users;

@@ -4,14 +4,15 @@ This file gives a complete start-to-end implementation order for the MSS Ltd Cis
 
 1. Internet and ISP
 2. Edge router
-3. Redundant core switches
-4. Access switches
-5. Server farm
-6. Department PCs
-7. Security controls
-8. Functional testing
-9. Redundancy testing
-10. Evidence and final checks
+3. Stateful perimeter firewall
+4. Redundant core switches
+5. Access switches
+6. Server farm
+7. Department PCs
+8. Security controls
+9. Functional testing
+10. Redundancy testing
+11. Evidence and final checks
 
 The design supports the coursework requirements for Marketing, Sales, General Support, intranet, e-mail, departmental database access, backup services, Internet access, redundancy, security and future growth.
 
@@ -26,14 +27,20 @@ The design supports the coursework requirements for Marketing, Sales, General Su
 | ISP-R1 | 2911 router | Simulates the external ISP network |
 | EDGE-R1 | 2911 router | Company edge router, NAT and default Internet route |
 
-### 1.2 Core switches
+### 1.2 Firewall
+
+| Device | Packet Tracer model | Purpose |
+|---|---|---|
+| FW-ASA1 | ASA 5505 | Stateful perimeter inspection and outside access policy |
+
+### 1.3 Core switches
 
 | Device | Packet Tracer model | Purpose |
 |---|---|---|
 | CORE-SW1 | 3560-24PS multilayer switch | Main core switch, inter-VLAN routing, HSRP and STP |
 | CORE-SW2 | 3560-24PS multilayer switch | Redundant core switch, HSRP and STP backup/load sharing |
 
-### 1.3 Access switches
+### 1.4 Access switches
 
 | Device | Packet Tracer model | Purpose |
 |---|---|---|
@@ -43,7 +50,7 @@ The design supports the coursework requirements for Marketing, Sales, General Su
 | SW-SUPPORT | 2960-24TT | Floor 3 General Support users |
 | SW-SERVER | 2960-24TT | Server farm, backup VLAN and Admin PC |
 
-### 1.4 End devices
+### 1.5 End devices
 
 | Device group | Quantity | Names |
 |---|---:|---|
@@ -52,7 +59,7 @@ The design supports the coursework requirements for Marketing, Sales, General Su
 | Support PCs | 15 | SUP-PC01 to SUP-PC15 |
 | Admin PC | 1 | ADMIN-PC |
 
-### 1.5 Servers
+### 1.6 Servers
 
 | Server | Purpose | IP address | VLAN |
 |---|---|---|---:|
@@ -84,10 +91,13 @@ The design supports the coursework requirements for Marketing, Sales, General Su
 
 | Link | Side A | Side B |
 |---|---|---|
-| CORE-SW1 to EDGE-R1 | CORE-SW1 Fa0/24: 10.255.0.1/30 | EDGE-R1 G0/0: 10.255.0.2/30 |
-| CORE-SW2 to EDGE-R1 | CORE-SW2 Fa0/24: 10.255.0.5/30 | EDGE-R1 G0/1: 10.255.0.6/30 |
+| CORE-SW1 to FW-ASA1 inside | CORE-SW1 Fa0/24: 10.255.0.2/29 | FW-ASA1 VLAN 1: 10.255.0.1/29 |
+| CORE-SW2 to FW-ASA1 inside | CORE-SW2 Fa0/24: 10.255.0.3/29 | FW-ASA1 VLAN 1: 10.255.0.1/29 |
+| FW-ASA1 outside to EDGE-R1 | FW-ASA1 VLAN 2: 10.255.1.2/30 | EDGE-R1 G0/0: 10.255.1.1/30 |
 | EDGE-R1 to ISP-R1 | EDGE-R1 G0/2: 203.0.113.2/30 | ISP-R1 G0/0: 203.0.113.1/30 |
 | ISP-R1 to Internet server | ISP-R1 G0/1: 198.51.100.1/24 | INTERNET-SRV Fa0: 198.51.100.10/24 |
+
+The firewall-to-core transit uses HSRP virtual address `10.255.0.4/29`; `FW-ASA1` uses it as the resilient next hop for all internal subnets.
 
 ---
 
@@ -189,21 +199,34 @@ INTERNET-SRV
   EDGE-R1
 ```
 
+### Step 3.6A - Place and rename the firewall
+
+1. Click **Network Devices > Security**.
+2. Select the **ASA 5505** and place it directly below `EDGE-R1`.
+3. Open **Config** and change its display name to `FW-ASA1`.
+4. Close the device window.
+
+### Step 3.6B - Connect EDGE-R1 to FW-ASA1
+
+1. Click **Connections > Automatically Choose Connection Type**.
+2. Connect `EDGE-R1 GigabitEthernet0/0` to `FW-ASA1 Ethernet0/0`.
+3. Press `Esc`.
+
 ### Step 3.7 - Place and rename the two core switches
 
-Place these two devices on the same row below `EDGE-R1`.
+Place these two devices on the same row below `FW-ASA1`.
 
 1. At the bottom-left, click **Network Devices**.
 2. Click **Switches**.
 3. Find the **3560-24PS** multilayer switch.
 4. Click **3560-24PS**.
-5. Place it below and slightly left of `EDGE-R1`.
+5. Place it below and slightly left of `FW-ASA1`.
 6. Press `Esc`.
 7. Click the switch and open **Config**.
 8. Change **Display Name** to `CORE-SW1`.
 9. Close the window.
 10. Click **Network Devices > Switches > 3560-24PS** again.
-11. Place the second switch below and slightly right of `EDGE-R1`, level with `CORE-SW1`.
+11. Place the second switch below and slightly right of `FW-ASA1`, level with `CORE-SW1`.
 12. Press `Esc`.
 13. Click the second switch and open **Config**.
 14. Change **Display Name** to `CORE-SW2`.
@@ -213,23 +236,25 @@ The layout should resemble:
 
 ```text
              EDGE-R1
+                |
+             FW-ASA1
               /   \
        CORE-SW1---CORE-SW2
 ```
 
-### Step 3.8 - Connect EDGE-R1 to both core switches
+### Step 3.8 - Connect FW-ASA1 to both core switches
 
 Create the left connection:
 
 1. Click **Connections > Automatically Choose Connection Type**.
-2. Click `EDGE-R1` and select `GigabitEthernet0/0`.
+2. Click `FW-ASA1` and select `Ethernet0/1`.
 3. Click `CORE-SW1` and select `FastEthernet0/24`.
 4. Press `Esc`.
 
 Create the right connection:
 
 5. Click **Connections > Automatically Choose Connection Type**.
-6. Click `EDGE-R1` and select `GigabitEthernet0/1`.
+6. Click `FW-ASA1` and select `Ethernet0/2`.
 7. Click `CORE-SW2` and select `FastEthernet0/24`.
 8. Press `Esc`.
 
@@ -457,22 +482,23 @@ Add these labels before configuration so the logical topology clearly shows the 
 2. Click above `INTERNET-SRV` and enter `Internet / External Network`.
 3. Click beside the `INTERNET-SRV` to `ISP-R1` link and enter `Public LAN - 198.51.100.0/24`.
 4. Click beside the `ISP-R1` to `EDGE-R1` link and enter `WAN Link - 203.0.113.0/30`.
-5. Click beside `EDGE-R1` and enter `MSS Ltd Network Edge - NAT and Default Route`.
-6. Click beside the `EDGE-R1` to `CORE-SW1` link and enter `10.255.0.0/30`.
-7. Click beside the `EDGE-R1` to `CORE-SW2` link and enter `10.255.0.4/30`.
-8. Click above the two core switches and enter `Core / Distribution Layer - HSRP, STP and Inter-VLAN Routing`.
-9. Click beside the core-to-core link and enter `802.1Q Core Trunk - VLANs 10,20,30,40,50,60,99`.
-10. Click above the Marketing area and enter `Floor 1 - Marketing - VLAN 10 - 192.168.10.0/27`.
-11. Click above both Sales switches and enter `Floor 2 - Sales - VLAN 20 - 192.168.20.0/26`.
-12. Click above the Support area and enter `Floor 3 - General Support - VLAN 30 - 192.168.30.0/27`.
-13. Click above `SW-SERVER` and enter `Server Room / Server Farm`.
-14. Click beside the production servers and enter `Servers - VLAN 40 - 192.168.40.0/27`.
-15. Click beside `ADMIN-PC` and enter `Management - VLAN 50 - 192.168.50.0/28`.
-16. Click beside `BACKUP-DB-SRV` and `ARCHIVE-SRV` and enter `Protected Backup Network - VLAN 60 - 192.168.60.0/28`.
-17. Click near the access-switch uplinks and enter `Dual 802.1Q Trunks - Primary and Redundant Paths`.
-18. Click near the unused access-switch ports and enter `Native / Unused VLAN 99 - No User Hosts`.
-19. Drag notes as needed so they do not cover devices, cables or port indicators.
-20. Press `Ctrl+S` to save the labelled topology.
+5. Click beside `EDGE-R1` and enter `MSS Ltd Edge Router - NAT and Default Route`.
+6. Click beside `FW-ASA1` and enter `Stateful Perimeter Firewall - Inside/Outside Inspection`.
+7. Click beside the `EDGE-R1` to `FW-ASA1` link and enter `10.255.1.0/30`.
+8. Click beside both firewall-to-core links and enter `Inside Transit - 10.255.0.0/29`.
+9. Click above the two core switches and enter `Core / Distribution Layer - HSRP, STP and Inter-VLAN Routing`.
+10. Click beside the core-to-core link and enter `802.1Q Core Trunk - VLANs 10,20,30,40,50,60,99`.
+11. Click above the Marketing area and enter `Floor 1 - Marketing - VLAN 10 - 192.168.10.0/27`.
+12. Click above both Sales switches and enter `Floor 2 - Sales - VLAN 20 - 192.168.20.0/26`.
+13. Click above the Support area and enter `Floor 3 - General Support - VLAN 30 - 192.168.30.0/27`.
+14. Click above `SW-SERVER` and enter `Server Room / Server Farm`.
+15. Click beside the production servers and enter `Servers - VLAN 40 - 192.168.40.0/27`.
+16. Click beside `ADMIN-PC` and enter `Management - VLAN 50 - 192.168.50.0/28`.
+17. Click beside `BACKUP-DB-SRV` and `ARCHIVE-SRV` and enter `Protected Backup Network - VLAN 60 - 192.168.60.0/28`.
+18. Click near the access-switch uplinks and enter `Dual 802.1Q Trunks - Primary and Redundant Paths`.
+19. Click near the unused access-switch ports and enter `Native / Unused VLAN 99 - No User Hosts`.
+20. Drag notes as needed so they do not cover devices, cables or port indicators.
+21. Press `Ctrl+S` to save the labelled topology.
 
 ### Step 3.26 - Check every physical connection before configuration
 
@@ -480,20 +506,21 @@ Inspect the topology and confirm all of the following:
 
 1. `INTERNET-SRV Fa0` connects to `ISP-R1 G0/1`.
 2. `ISP-R1 G0/0` connects to `EDGE-R1 G0/2`.
-3. `EDGE-R1 G0/0` connects to `CORE-SW1 Fa0/24`.
-4. `EDGE-R1 G0/1` connects to `CORE-SW2 Fa0/24`.
-5. `CORE-SW1 Gi0/1` connects to `CORE-SW2 Gi0/1`.
-6. Every access switch has one uplink to each core switch.
-7. Marketing PCs use `SW-MKT Fa0/1-20`.
-8. Sales PCs 01-24 use `SW-SALES-A Fa0/1-24`.
-9. Sales PC 25 uses `SW-SALES-B Fa0/1`.
-10. Support PCs use `SW-SUPPORT Fa0/1-15`.
-11. Normal servers use `SW-SERVER Fa0/1-6`.
-12. Backup servers use `SW-SERVER Fa0/7-8`.
-13. `ADMIN-PC` uses `SW-SERVER Fa0/9`.
-14. No switch port has two cables connected to it.
-15. All devices have the exact display names used in this guide.
-16. Click **File > Save** or press `Ctrl+S`.
+3. `EDGE-R1 G0/0` connects to `FW-ASA1 E0/0`.
+4. `FW-ASA1 E0/1` connects to `CORE-SW1 Fa0/24`.
+5. `FW-ASA1 E0/2` connects to `CORE-SW2 Fa0/24`.
+6. `CORE-SW1 Gi0/1` connects to `CORE-SW2 Gi0/1`.
+7. Every access switch has one uplink to each core switch.
+8. Marketing PCs use `SW-MKT Fa0/1-20`.
+9. Sales PCs 01-24 use `SW-SALES-A Fa0/1-24`.
+10. Sales PC 25 uses `SW-SALES-B Fa0/1`.
+11. Support PCs use `SW-SUPPORT Fa0/1-15`.
+12. Normal servers use `SW-SERVER Fa0/1-6`.
+13. Backup servers use `SW-SERVER Fa0/7-8`.
+14. `ADMIN-PC` uses `SW-SERVER Fa0/9`.
+15. No switch port has two cables connected to it.
+16. All devices have the exact display names used in this guide.
+17. Click **File > Save** or press `Ctrl+S`.
 
 Do not worry if router-facing links remain red at this stage. Router interfaces are administratively down until the later configuration commands apply `no shutdown`. Continue directly to Section 4 and follow the configuration order exactly as written; it brings the switching and routing foundation online before the servers and PCs request network service.
 
@@ -657,13 +684,16 @@ interface gigabitEthernet 0/1
 exit
 
 interface fastEthernet 0/24
- description ROUTED-LINK-TO-EDGE-R1-G0/0
+ description ROUTED-LINK-TO-FW-ASA1-E0/1
  no switchport
- ip address 10.255.0.1 255.255.255.252
+ ip address 10.255.0.2 255.255.255.248
+ standby 70 ip 10.255.0.4
+ standby 70 priority 110
+ standby 70 preempt
  no shutdown
 exit
 
-ip route 0.0.0.0 0.0.0.0 10.255.0.2
+ip route 0.0.0.0 0.0.0.0 10.255.0.1
 end
 write memory
 ```
@@ -794,13 +824,16 @@ interface gigabitEthernet 0/1
 exit
 
 interface fastEthernet 0/24
- description ROUTED-LINK-TO-EDGE-R1-G0/1
+ description ROUTED-LINK-TO-FW-ASA1-E0/2
  no switchport
- ip address 10.255.0.5 255.255.255.252
+ ip address 10.255.0.3 255.255.255.248
+ standby 70 ip 10.255.0.4
+ standby 70 priority 100
+ standby 70 preempt
  no shutdown
 exit
 
-ip route 0.0.0.0 0.0.0.0 10.255.0.6
+ip route 0.0.0.0 0.0.0.0 10.255.0.1
 end
 write memory
 ```
@@ -1076,7 +1109,80 @@ show spanning-tree
 
 ---
 
-## 7. Configure EDGE-R1
+## 7. Configure FW-ASA1 And EDGE-R1
+
+### 7.1 Configure FW-ASA1
+
+1. Click `FW-ASA1`, open **CLI**, and answer `no` to an initial setup dialog.
+2. Enter the configuration below. The firewall permits sessions initiated from the trusted inside and denies unsolicited sessions initiated from outside.
+
+```cisco
+enable
+configure terminal
+hostname FW-ASA1
+domain-name mss.local
+enable password ReplaceEnableSecret
+username netadmin password ReplaceAdminSecret privilege 15
+
+interface vlan 1
+ nameif inside
+ security-level 100
+ ip address 10.255.0.1 255.255.255.248
+ no shutdown
+exit
+interface vlan 2
+ nameif outside
+ security-level 0
+ ip address 10.255.1.2 255.255.255.252
+ no shutdown
+exit
+
+interface ethernet 0/0
+ description TO-EDGE-R1-G0/0
+ switchport access vlan 2
+ no shutdown
+exit
+interface ethernet 0/1
+ description TO-CORE-SW1-FA0/24
+ switchport access vlan 1
+ no shutdown
+exit
+interface ethernet 0/2
+ description TO-CORE-SW2-FA0/24
+ switchport access vlan 1
+ no shutdown
+exit
+
+route outside 0.0.0.0 0.0.0.0 10.255.1.1 1
+route inside 192.168.0.0 255.255.0.0 10.255.0.4 1
+
+access-list OUTSIDE-IN extended deny ip any 192.168.0.0 255.255.0.0
+access-group OUTSIDE-IN in interface outside
+policy-map global_policy
+ class inspection_default
+  inspect icmp
+exit
+service-policy global_policy global
+
+crypto key generate rsa modulus 1024
+aaa authentication ssh console LOCAL
+ssh 192.168.50.0 255.255.255.240 inside
+write memory
+```
+
+Check the firewall:
+
+```cisco
+show interface ip brief
+show route
+show access-list
+show service-policy
+show conn
+```
+
+If the Packet Tracer ASA image rejects an advanced inspection command, keep the inside/outside interfaces, security levels, static routes and outside ACL, then document the simulator limitation.
+
+### 7.2 Configure EDGE-R1
 
 1. Click `EDGE-R1` on the workspace.
 2. Open **CLI**.
@@ -1108,17 +1214,15 @@ line vty 0 4
 exit
 
 interface gigabitEthernet 0/0
- description TO-CORE-SW1
- ip address 10.255.0.2 255.255.255.252
+ description TO-FW-ASA1-OUTSIDE
+ ip address 10.255.1.1 255.255.255.252
  ip nat inside
  no shutdown
 exit
 
 interface gigabitEthernet 0/1
- description TO-CORE-SW2
- ip address 10.255.0.6 255.255.255.252
- ip nat inside
- no shutdown
+ description UNUSED
+ shutdown
 exit
 
 interface gigabitEthernet 0/2
@@ -1128,18 +1232,7 @@ interface gigabitEthernet 0/2
  no shutdown
 exit
 
-ip route 192.168.10.0 255.255.255.224 10.255.0.1
-ip route 192.168.10.0 255.255.255.224 10.255.0.5 5
-ip route 192.168.20.0 255.255.255.192 10.255.0.5
-ip route 192.168.20.0 255.255.255.192 10.255.0.1 5
-ip route 192.168.30.0 255.255.255.224 10.255.0.1
-ip route 192.168.30.0 255.255.255.224 10.255.0.5 5
-ip route 192.168.40.0 255.255.255.224 10.255.0.5
-ip route 192.168.40.0 255.255.255.224 10.255.0.1 5
-ip route 192.168.50.0 255.255.255.240 10.255.0.1
-ip route 192.168.50.0 255.255.255.240 10.255.0.5 5
-ip route 192.168.60.0 255.255.255.240 10.255.0.5
-ip route 192.168.60.0 255.255.255.240 10.255.0.1 5
+ip route 192.168.0.0 255.255.0.0 10.255.1.2
 ip route 0.0.0.0 0.0.0.0 203.0.113.1
 
 access-list 1 permit 192.168.0.0 0.0.255.255
@@ -1489,7 +1582,7 @@ Expected result:
 
 - HSRP groups show active/standby roles.
 - SVIs are up/up.
-- Default route points to EDGE-R1.
+- Default route points to `FW-ASA1` at `10.255.0.1`.
 
 ### Step 12.3 - Check DHCP
 
@@ -1621,10 +1714,19 @@ show ip nat translations
 show ip nat statistics
 ```
 
+On FW-ASA1:
+
+```cisco
+show conn
+show access-list
+show service-policy
+```
+
 Expected result:
 
 - External web page loads.
 - NAT translations appear on EDGE-R1.
+- The ASA connection table shows the inside-initiated session and unsolicited inbound traffic remains denied.
 
 ### Step 12.11 - Check SSH management restriction
 
@@ -1677,19 +1779,19 @@ show spanning-tree
 
 Expected result: gateway responsibility moves to the standby core and traffic recovers.
 
-### Step 13.3 - Test edge route resilience
+### Step 13.3 - Test firewall-to-core route resilience
 
-1. Confirm EDGE-R1 has primary and floating routes:
+1. Confirm `FW-ASA1` routes the internal summary through transit HSRP address `10.255.0.4`:
 
 ```cisco
-show ip route
+show route
 ```
 
-2. Shut down the preferred core-edge link for one VLAN path.
+2. Shut down the active core's firewall-facing link or power off that core.
 3. Test Internet access again.
 4. Restore the link.
 
-Expected result: backup route with administrative distance 5 is used if the primary path fails.
+Expected result: HSRP group 70 moves `10.255.0.4` to the surviving core and Internet access recovers after reconvergence.
 
 ---
 
@@ -1703,12 +1805,13 @@ Use this order whenever something fails:
 4. Trunk - Run `show interfaces trunk`.
 5. SVI - Run `show ip interface brief`.
 6. DHCP - Check DHCP pool, helper address, server gateway and VLAN.
-7. Gateway - Confirm the PC uses the HSRP `.1` gateway.
-8. Routing - Run `show ip route` on core switches and routers.
-9. ACL - Run `show access-lists`.
-10. NAT - Run `show ip nat translations` and `show ip nat statistics`.
-11. DNS - Ping by IP first, then ping by DNS name.
-12. STP/HSRP - Run `show spanning-tree` and `show standby brief`.
+7. Firewall - On `FW-ASA1`, check `show interface ip brief`, `show route`, `show conn`, `show access-list` and `show service-policy`.
+8. Gateway - Confirm the PC uses the HSRP `.1` gateway.
+9. Routing - Run `show ip route` on core switches and routers.
+10. ACL - Run `show access-lists`.
+11. NAT - Run `show ip nat translations` and `show ip nat statistics`.
+12. DNS - Ping by IP first, then ping by DNS name.
+13. STP/HSRP - Run `show spanning-tree` and `show standby brief`.
 
 Common fixes:
 
@@ -1719,6 +1822,8 @@ Common fixes:
 | One VLAN fails over a trunk | VLAN missing from allowed list | Add VLAN on both trunk ends |
 | DNS name fails but IP works | DNS record or DNS server issue | Check INFRA-SRV DNS and client DNS address |
 | NAT table is empty | NAT ACL/interface/default route issue | Check inside/outside roles, ACL 1 and routing |
+| Core reaches ASA but not EDGE-R1 | ASA outside interface/default route issue | Check ASA interfaces, security levels and `show route` |
+| Return traffic fails at the firewall | Inspection or outside-policy issue | Check `show conn`, `show service-policy` and `OUTSIDE-IN` counters |
 | User can reach backup server | ACL missing or wrong direction | Apply BACKUP-PROTECTION outbound on VLAN 60 |
 | SSH fails from Admin PC | SSH setup incomplete | Check domain name, RSA key, local user and VTY config |
 | Redundant link is amber | STP blocking duplicate path | Normal behavior; do not force it forwarding |
@@ -1744,10 +1849,11 @@ Capture clear screenshots in this order:
 13. Failed normal-user backup access.
 14. Successful Admin backup access.
 15. Internet page and NAT translation table.
-16. Successful Admin SSH and blocked normal-user SSH.
-17. Redundancy test before, during and after failure.
-18. Port security and unused port shutdown evidence.
-19. Final saved Packet Tracer topology.
+16. ASA connection table, inspection policy and outside ACL counters.
+17. Successful Admin SSH and blocked normal-user SSH.
+18. Redundancy test before, during and after failure.
+19. Port security and unused port shutdown evidence.
+20. Final saved Packet Tracer topology.
 
 Each screenshot caption should state:
 
@@ -1784,6 +1890,7 @@ Before submitting, confirm:
 - [ ] Admin PC can access backup VLAN services.
 - [ ] Internet access works through NAT.
 - [ ] EDGE-R1 shows NAT translations.
+- [ ] FW-ASA1 permits inside-initiated sessions and denies unsolicited inbound traffic.
 - [ ] SSH management works from VLAN 50 only.
 - [ ] Port security is enabled on user ports.
 - [ ] STP prevents loops.
@@ -1803,10 +1910,11 @@ Use these points in the written coursework report:
 - HSRP gives users a stable default gateway even if one core switch fails.
 - Rapid PVST+ prevents loops while still allowing redundant physical paths.
 - NAT overload allows all internal private users to reach the Internet through EDGE-R1.
+- FW-ASA1 provides the routed stateful security boundary between the core and edge router.
 - The backup VLAN is intentionally protected from normal user VLANs.
 - The database servers remain reachable from all departments because the brief requires company-wide database access.
-- In production, real database authentication, role-based access control, HTTPS, secure mail, central AAA, firewall inspection, IDS/IPS, syslog, NTP and vulnerability scanning should be added.
-- Packet Tracer is a simulation. It can show network reachability and services, but it does not provide real enterprise SQL databases, real backup scheduling, real firewall inspection or full vulnerability scanning.
+- In production, real database authentication, role-based access control, HTTPS, secure mail, central AAA, next-generation IDS/IPS, syslog, NTP and vulnerability scanning should be added.
+- Packet Tracer is a simulation. Its ASA demonstrates interface trust levels, ACLs and basic stateful inspection, but not the complete protection of a production next-generation firewall.
 
 ---
 
@@ -1818,7 +1926,7 @@ Use these points in the written coursework report:
 | 2 | Configure VLANs, trunks and access ports |
 | 3 | Configure core SVIs, HSRP, STP and routing |
 | 4 | Configure DHCP, DNS, intranet, database pages and e-mail |
-| 5 | Configure EDGE-R1, ISP-R1, NAT and Internet server |
+| 5 | Configure FW-ASA1, EDGE-R1, ISP-R1, NAT and Internet server |
 | 6 | Apply SSH restrictions, port security and backup ACL |
 | 7 | Run functional, security and redundancy tests |
 | 8 | Capture evidence and write the report |

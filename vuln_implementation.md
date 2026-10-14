@@ -11,7 +11,7 @@ It is specific to this topology:
 - Management: VLAN 50, `192.168.50.0/28`.
 - Backup and archive: VLAN 60, `192.168.60.0/28`.
 - Native/black-hole VLAN: VLAN 99.
-- Internet edge: `EDGE-R1`, NAT, `ISP-R1`, and `INTERNET-SRV`.
+- Internet edge: `FW-ASA1` stateful firewall, `EDGE-R1` NAT, `ISP-R1`, and `INTERNET-SRV`.
 - Redundancy: two multilayer core switches, HSRP, Rapid PVST+, and dual access uplinks.
 
 The coursework brief gives this component the following marks:
@@ -226,7 +226,7 @@ This is the starting hypothesis. Confirm, reject, or revise each item through te
 | F-09 | Trunks | VLAN hopping or native-VLAN inconsistency | Many manual trunks must consistently use VLAN 99 and an allowed list | 2 | 4 | 8 Medium |
 | F-10 | Endpoints/e-mail | Phishing, malware, and credential theft | All employees use e-mail and Internet services | 4 | 5 | 20 Critical |
 | F-11 | Visibility | No central AAA, syslog, SIEM, IDS/IPS, or time synchronisation | Packet Tracer design has limited detection and accountability | 4 | 4 | 16 High |
-| F-12 | Availability | Single `EDGE-R1` and single ISP connection | Core redundancy does not remove the Internet-edge single points of failure | 3 | 4 | 12 High |
+| F-12 | Availability | Single `FW-ASA1`, single `EDGE-R1`, and single ISP connection | Core redundancy does not remove the Internet-edge single points of failure | 3 | 4 | 12 High |
 | F-13 | Servers | Individual service/server failure | DHCP/DNS, mail, intranet, and backup roles each rely on individual simulated systems | 3 | 4 | 12 High |
 | F-14 | Backup process | Backup pages exist, but no real scheduled, immutable, or tested backup | Packet Tracer only simulates the service label | 4 | 5 | 20 Critical |
 | F-15 | Physical infrastructure | Theft, power loss, fire, or unauthorised server-room access | Three floors and a server room require physical controls | 3 | 5 | 15 High |
@@ -412,7 +412,7 @@ Run continuous pings and repeat the documented uplink and HSRP failure tests. Re
 - STP forwarding/blocking change.
 - Whether Internet service survived a single core link failure.
 
-Then document that failure of the only `EDGE-R1` or the only ISP connection still causes an outage.
+Then document that failure of the only `FW-ASA1`, the only `EDGE-R1`, or the only ISP connection still causes an outage.
 
 ---
 
@@ -1130,7 +1130,7 @@ Confirm the existing design has:
 - Port security with sticky MAC and violation restriction.
 - BPDU Guard and PortFast on access ports.
 - Unused ports assigned to VLAN 99 and shut down.
-- NAT overload at `EDGE-R1`.
+- Stateful perimeter enforcement at `FW-ASA1` and NAT overload at `EDGE-R1`.
 - HSRP, Rapid PVST+, dual uplinks, and tested failover.
 
 After every correction:
@@ -1155,7 +1155,7 @@ Then repeat the exact failed test and record the new result.
 | Phishing/malware | Secure e-mail gateway, endpoint detection and response, least privilege, application control, awareness exercises |
 | Poor visibility | Central syslog/SIEM, NTP, IDS/IPS, NetFlow/telemetry, alert ownership and retention policy |
 | Backup risk | 3-2-1 strategy, offline/immutable copy, encrypted backups, separate credentials, scheduled restore tests |
-| Edge single point of failure | Two edge firewalls/routers, diverse ISP links, tested failover, spare hardware/configuration |
+| Edge single point of failure | A redundant firewall pair and redundant edge routers, diverse ISP links, tested failover, spare hardware/configuration |
 | Server failure | Service redundancy, configuration backups, clustering/replication as justified, UPS and monitoring |
 | Physical threats | Locked racks, controlled server-room access, CCTV where appropriate, UPS, fire suppression, environmental sensors |
 
