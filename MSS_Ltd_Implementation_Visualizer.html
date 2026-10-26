@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MSS Ltd Network Implementation - Interactive Animated Flow & Architecture</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7)); }
+      50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(59, 130, 246, 1)); }
+    }
+    @keyframes packet-dash {
+      to { stroke-dashoffset: -40; }
+    }
+    .cable-active {
+      stroke-dasharray: 6, 6;
+      animation: packet-dash 1.2s linear infinite;
+    }
+    .cable-failover {
+      stroke-dasharray: 6, 6;
+      animation: packet-dash 1.2s linear infinite reverse;
+    }
+    .pulse-device {
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3b82f6;
+      border-radius: 4px;
+    }
+    .tab-btn.active {
+      border-bottom: 2px solid #3b82f6;
+      color: #60a5fa;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">MSS Ltd Cisco Network Implementation</h1>
+        <p class="text-xs text-slate-400">Interactive Animated Flow, Topology Simulation & Implementation Wizard</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats Pills -->
+    <div class="flex items-center gap-2 text-xs flex-wrap">
+      <span class="px-2.5 py-1 rounded-full bg-blue-950/80 border border-blue-800 text-blue-300 font-medium">3-Tier Redundant Campus</span>
+      <span class="px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-300 font-medium">HSRP Gateway Failover</span>
+      <span class="px-2.5 py-1 rounded-full bg-amber-950/80 border border-amber-800 text-amber-300 font-medium">ASA 5505 Stateful Firewall</span>
+      <span class="px-2.5 py-1 rounded-full bg-purple-950/80 border border-purple-800 text-purple-300 font-medium">60 Endpoints + 8 Servers</span>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="p-6 max-w-[1700px] mx-auto space-y-6">
+
+    <!-- Top Action Toolbar -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+      <!-- Simulation Scenario Selectors -->
+      <div class="lg:col-span-8 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+          <span>Animated Packet Flow Scenarios</span>
+          <span id="scenarioStatus" class="text-blue-400 font-mono">Idle - Select a scenario to simulate</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          <button onclick="runScenario('internet')" class="scenario-btn p-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-blue-600 transition border border-slate-700 flex flex-col items-center gap-1">
+            <span class="text-blue-400 text-base">🌐</span>
+            <span>Internet NAT Access</span>
+          </button>
+          <button onclick="runScenario('intranet')" class="scenario-btn p-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-emerald-600 transition border border-slate-700 flex flex-col items-center gap-1">
+            <span class="text-emerald-400 text-base">📁</span>
+            <span>Internal DB Access</span>
+          </button>
+          <button onclick="runScenario('blocked')" class="scenario-btn p-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-rose-600 transition border border-slate-700 flex flex-col items-center gap-1">
+            <span class="text-rose-400 text-base">🚫</span>
+            <span>ACL Isolation Block</span>
+          </button>
+          <button onclick="runScenario('failover')" class="scenario-btn p-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-purple-600 transition border border-slate-700 flex flex-col items-center gap-1">
+            <span class="text-purple-400 text-base">⚡</span>
+            <span>HSRP Core Failover</span>
+          </button>
+          <button onclick="runScenario('backup')" class="scenario-btn p-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-amber-600 transition border border-slate-700 flex flex-col items-center gap-1">
+            <span class="text-amber-400 text-base">🛡️</span>
+            <span>Admin Backup VLAN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Playback & Controls -->
+      <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between h-full">
+        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Interactive Implementation Stepper</div>
+        <div class="flex items-center justify-between gap-2">
+          <button onclick="prevStep()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg font-medium border border-slate-700 transition flex items-center gap-1">
+            <span>◀ Prev</span>
+          </button>
+          <div class="text-center">
+            <span id="stepIndicator" class="text-sm font-bold text-blue-400">Phase 1 of 11</span>
+            <div id="stepNameMini" class="text-[11px] text-slate-400 truncate max-w-[150px]">Physical Placement</div>
+          </div>
+          <button onclick="nextStep()" class="px-3 py-2 text-xs bg-blue-600 hover:bg-blue-500 rounded-lg font-medium shadow-md shadow-blue-500/20 transition flex items-center gap-1">
+            <span>Next ▶</span>
+          </button>
+          <button onclick="toggleAutoPlay()" id="autoPlayBtn" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">
+            ▶ Auto
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Visual Stage (Topology Canvas & Step Details) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Interactive SVG Topology (8 Cols) -->
+      <div class="lg:col-span-8 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 relative shadow-2xl overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-slate-300 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+              Live Packet Tracer Topology Map
+            </span>
+            <span class="text-slate-500">|</span>
+            <span class="text-slate-400">Click any device for CLI & interface details</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="resetSimulation()" class="px-2.5 py-1 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded border border-slate-700 transition">Reset View</button>
+          </div>
+        </div>
+
+        <!-- SVG Topology Diagram -->
+        <div class="relative w-full h-[620px] flex items-center justify-center overflow-auto mt-2 select-none">
+          <svg id="topoCanvas" viewBox="0 0 1000 640" class="w-full h-full max-h-[620px]">
+            <defs>
+              <!-- Gradients for Links -->
+              <linearGradient id="linkGradBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="100%" stop-color="#06b6d4" />
+              </linearGradient>
+              <linearGradient id="linkGradGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="100%" stop-color="#059669" />
+              </linearGradient>
+              <linearGradient id="linkGradOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#d97706" />
+              </linearGradient>
+              <!-- Filters for glowing lights -->
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- CONNECTIONS (CABLES) -->
+            <!-- 1. Internet Server to ISP -->
+            <path id="link_internet_isp" d="M 500,45 L 500,95" stroke="#475569" stroke-width="3" />
+            <text x="510" y="70" fill="#94a3b8" font-size="10">198.51.100.0/24</text>
+
+            <!-- 2. ISP to EDGE -->
+            <path id="link_isp_edge" d="M 500,135 L 500,185" stroke="#475569" stroke-width="3" />
+            <text x="510" y="160" fill="#94a3b8" font-size="10">203.0.113.0/30 (WAN)</text>
+
+            <!-- 3. EDGE to ASA Firewall -->
+            <path id="link_edge_asa" d="M 500,225 L 500,270" stroke="#475569" stroke-width="3" />
+            <text x="510" y="248" fill="#f59e0b" font-size="10">Outside VLAN 2: 10.255.1.0/30</text>
+
+            <!-- 4. ASA to CORE-SW1 (Fa0/24) -->
+            <path id="link_asa_core1" d="M 480,310 L 320,365" stroke="#475569" stroke-width="3" />
+            <text x="350" y="325" fill="#38bdf8" font-size="10">Fa0/24 (.2)</text>
+
+            <!-- 5. ASA to CORE-SW2 (Fa0/24) -->
+            <path id="link_asa_core2" d="M 520,310 L 680,365" stroke="#475569" stroke-width="3" />
+            <text x="610" y="325" fill="#38bdf8" font-size="10">Fa0/24 (.3)</text>
+
+            <!-- 6. Inter-Core Trunk (Gi0/1) -->
+            <path id="link_core1_core2" d="M 360,380 L 640,380" stroke="#3b82f6" stroke-width="4" stroke-dasharray="4,2" />
+            <text x="445" y="372" fill="#60a5fa" font-size="10" font-weight="bold">802.1Q Core Trunk (HSRP)</text>
+
+            <!-- 7. CORE-SW1 Uplinks to Access Switches -->
+            <path id="link_core1_mkt" d="M 280,400 L 120,470" stroke="#475569" stroke-width="2" />
+            <path id="link_core1_salesa" d="M 300,400 L 290,470" stroke="#475569" stroke-width="2" />
+            <path id="link_core1_salesb" d="M 310,400 L 460,470" stroke="#475569" stroke-width="2" />
+            <path id="link_core1_sup" d="M 330,400 L 630,470" stroke="#475569" stroke-width="2" />
+            <path id="link_core1_srv" d="M 350,400 L 820,470" stroke="#475569" stroke-width="2" />
+
+            <!-- 8. CORE-SW2 Redundant Uplinks to Access Switches -->
+            <path id="link_core2_mkt" d="M 650,400 L 140,470" stroke="#334155" stroke-width="2" stroke-dasharray="3,3" />
+            <path id="link_core2_salesa" d="M 670,400 L 310,470" stroke="#334155" stroke-width="2" stroke-dasharray="3,3" />
+            <path id="link_core2_salesb" d="M 680,400 L 480,470" stroke="#334155" stroke-width="2" stroke-dasharray="3,3" />
+            <path id="link_core2_sup" d="M 700,400 L 650,470" stroke="#334155" stroke-width="2" stroke-dasharray="3,3" />
+            <path id="link_core2_srv" d="M 720,400 L 840,470" stroke="#334155" stroke-width="2" stroke-dasharray="3,3" />
+
+            <!-- 9. Access Switches to Endpoints -->
+            <path d="M 120,510 L 120,560" stroke="#475569" stroke-width="2" />
+            <path d="M 290,510 L 290,560" stroke="#475569" stroke-width="2" />
+            <path d="M 470,510 L 470,560" stroke="#475569" stroke-width="2" />
+            <path d="M 640,510 L 640,560" stroke="#475569" stroke-width="2" />
+            <path d="M 830,510 L 830,560" stroke="#475569" stroke-width="2" />
+
+            <!-- ANIMATED PACKET MARKERS -->
+            <circle id="animPacket1" r="7" fill="#60a5fa" filter="url(#glow)" opacity="0" cx="0" cy="0"></circle>
+            <circle id="animPacket2" r="7" fill="#10b981" filter="url(#glow)" opacity="0" cx="0" cy="0"></circle>
+            <circle id="animPacketDrop" r="9" fill="#ef4444" filter="url(#glow)" opacity="0" cx="0" cy="0"></circle>
+
+            <!-- DEVICE NODES (TIER 1 - EXTERNAL & FIREWALL) -->
+            <!-- 1. Internet Server -->
+            <g id="node_internet" onclick="inspectDevice('INTERNET-SRV')" class="cursor-pointer group">
+              <rect x="420" y="10" width="160" height="38" rx="8" fill="#1e293b" stroke="#0284c7" stroke-width="2" />
+              <text x="500" y="27" fill="#e0f2fe" font-size="11" font-weight="bold" text-anchor="middle">INTERNET-SRV</text>
+              <text x="500" y="40" fill="#38bdf8" font-size="9" text-anchor="middle">198.51.100.10/24 (HTTP/DNS)</text>
+            </g>
+
+            <!-- 2. ISP Router -->
+            <g id="node_isp" onclick="inspectDevice('ISP-R1')" class="cursor-pointer group">
+              <rect x="420" y="95" width="160" height="38" rx="8" fill="#1e293b" stroke="#64748b" stroke-width="2" />
+              <text x="500" y="112" fill="#f8fafc" font-size="11" font-weight="bold" text-anchor="middle">ISP-R1 (2911)</text>
+              <text x="500" y="125" fill="#94a3b8" font-size="9" text-anchor="middle">G0/0: 203.0.113.1 | G0/1: 198.51.100.1</text>
+            </g>
+
+            <!-- 3. EDGE Router -->
+            <g id="node_edge" onclick="inspectDevice('EDGE-R1')" class="cursor-pointer group">
+              <rect x="410" y="185" width="180" height="40" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2" />
+              <text x="500" y="202" fill="#dbeafe" font-size="11" font-weight="bold" text-anchor="middle">EDGE-R1 (2911 Router)</text>
+              <text x="500" y="217" fill="#60a5fa" font-size="9" text-anchor="middle">NAT Overload (PAT) + 0.0.0.0/0</text>
+            </g>
+
+            <!-- 4. ASA Firewall -->
+            <g id="node_asa" onclick="inspectDevice('FW-ASA1')" class="cursor-pointer group">
+              <rect x="400" y="270" width="200" height="42" rx="10" fill="#1e1b4b" stroke="#f59e0b" stroke-width="2.5" />
+              <text x="500" y="288" fill="#fef3c7" font-size="11" font-weight="bold" text-anchor="middle">FW-ASA1 (ASA 5505)</text>
+              <text x="500" y="303" fill="#fbbf24" font-size="9" text-anchor="middle">Stateful Inspect | In: 10.255.0.1 | Out: 10.255.1.2</text>
+            </g>
+
+            <!-- TIER 2 - CORE SWITCHES -->
+            <!-- CORE-SW1 (Active HSRP) -->
+            <g id="node_core1" onclick="inspectDevice('CORE-SW1')" class="cursor-pointer group">
+              <rect id="rect_core1" x="200" y="360" width="160" height="46" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="3" />
+              <text x="280" y="379" fill="#93c5fd" font-size="11" font-weight="bold" text-anchor="middle">CORE-SW1 (3560-24PS)</text>
+              <text x="280" y="393" fill="#34d399" font-size="9" font-weight="semibold" text-anchor="middle">HSRP Active (Pri 110) | Root STP</text>
+              <circle cx="215" cy="373" r="4" fill="#10b981" />
+            </g>
+
+            <!-- CORE-SW2 (Standby HSRP) -->
+            <g id="node_core2" onclick="inspectDevice('CORE-SW2')" class="cursor-pointer group">
+              <rect id="rect_core2" x="640" y="360" width="160" height="46" rx="8" fill="#1e293b" stroke="#64748b" stroke-width="2" />
+              <text x="720" y="379" fill="#cbd5e1" font-size="11" font-weight="bold" text-anchor="middle">CORE-SW2 (3560-24PS)</text>
+              <text id="core2StatusText" x="720" y="393" fill="#94a3b8" font-size="9" text-anchor="middle">HSRP Standby (Pri 100)</text>
+              <circle id="core2StatusCircle" cx="655" cy="373" r="4" fill="#f59e0b" />
+            </g>
+
+            <!-- TIER 3 - ACCESS SWITCHES -->
+            <!-- Floor 1: SW-MKT -->
+            <g id="node_sw_mkt" onclick="inspectDevice('SW-MKT')" class="cursor-pointer group">
+              <rect x="50" y="470" width="140" height="40" rx="6" fill="#0f172a" stroke="#475569" stroke-width="2" />
+              <text x="120" y="488" fill="#e2e8f0" font-size="10" font-weight="bold" text-anchor="middle">SW-MKT (2960)</text>
+              <text x="120" y="501" fill="#94a3b8" font-size="8.5" text-anchor="middle">Floor 1 - VLAN 10</text>
+            </g>
+
+            <!-- Floor 2: SW-SALES-A -->
+            <g id="node_sw_salesa" onclick="inspectDevice('SW-SALES-A')" class="cursor-pointer group">
+              <rect x="220" y="470" width="140" height="40" rx="6" fill="#0f172a" stroke="#475569" stroke-width="2" />
+              <text x="290" y="488" fill="#e2e8f0" font-size="10" font-weight="bold" text-anchor="middle">SW-SALES-A (2960)</text>
+              <text x="290" y="501" fill="#94a3b8" font-size="8.5" text-anchor="middle">Floor 2 - VLAN 20 (01-24)</text>
+            </g>
+
+            <!-- Floor 2: SW-SALES-B -->
+            <g id="node_sw_salesb" onclick="inspectDevice('SW-SALES-B')" class="cursor-pointer group">
+              <rect x="390" y="470" width="150" height="40" rx="6" fill="#0f172a" stroke="#475569" stroke-width="2" />
+              <text x="465" y="488" fill="#e2e8f0" font-size="10" font-weight="bold" text-anchor="middle">SW-SALES-B (2960)</text>
+              <text x="465" y="501" fill="#94a3b8" font-size="8.5" text-anchor="middle">Floor 2 - User 25 + Growth</text>
+            </g>
+
+            <!-- Floor 3: SW-SUPPORT -->
+            <g id="node_sw_sup" onclick="inspectDevice('SW-SUPPORT')" class="cursor-pointer group">
+              <rect x="570" y="470" width="140" height="40" rx="6" fill="#0f172a" stroke="#475569" stroke-width="2" />
+              <text x="640" y="488" fill="#e2e8f0" font-size="10" font-weight="bold" text-anchor="middle">SW-SUPPORT (2960)</text>
+              <text x="640" y="501" fill="#94a3b8" font-size="8.5" text-anchor="middle">Floor 3 - VLAN 30</text>
+            </g>
+
+            <!-- Server Room: SW-SERVER -->
+            <g id="node_sw_srv" onclick="inspectDevice('SW-SERVER')" class="cursor-pointer group">
+              <rect x="750" y="470" width="160" height="40" rx="6" fill="#0f172a" stroke="#475569" stroke-width="2" />
+              <text x="830" y="488" fill="#e2e8f0" font-size="10" font-weight="bold" text-anchor="middle">SW-SERVER (2960)</text>
+              <text x="830" y="501" fill="#94a3b8" font-size="8.5" text-anchor="middle">VLAN 40, 50, 60 Farms</text>
+            </g>
+
+            <!-- TIER 4 - ENDPOINTS & SERVERS -->
+            <!-- Marketing PCs -->
+            <g id="node_ep_mkt" onclick="inspectDevice('MKT-PCS')" class="cursor-pointer group">
+              <rect x="50" y="560" width="140" height="48" rx="6" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.5" />
+              <text x="120" y="579" fill="#bae6fd" font-size="10" font-weight="bold" text-anchor="middle">Marketing PCs (x20)</text>
+              <text x="120" y="594" fill="#38bdf8" font-size="8.5" text-anchor="middle">192.168.10.0/27 (DHCP)</text>
+            </g>
+
+            <!-- Sales PCs Group -->
+            <g id="node_ep_sales" onclick="inspectDevice('SALES-PCS')" class="cursor-pointer group">
+              <rect x="220" y="560" width="320" height="48" rx="6" fill="#1e293b" stroke="#10b981" stroke-width="1.5" />
+              <text x="380" y="579" fill="#a7f3d0" font-size="10" font-weight="bold" text-anchor="middle">Sales PCs 01 to 25 (x25)</text>
+              <text x="380" y="594" fill="#34d399" font-size="8.5" text-anchor="middle">192.168.20.0/26 (DHCP) - Across SW-SALES-A & B</text>
+            </g>
+
+            <!-- Support PCs -->
+            <g id="node_ep_sup" onclick="inspectDevice('SUP-PCS')" class="cursor-pointer group">
+              <rect x="570" y="560" width="140" height="48" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" />
+              <text x="640" y="579" fill="#fde68a" font-size="10" font-weight="bold" text-anchor="middle">Support PCs (x15)</text>
+              <text x="640" y="594" fill="#fbbf24" font-size="8.5" text-anchor="middle">192.168.30.0/27 (DHCP)</text>
+            </g>
+
+            <!-- Server Farm Compound -->
+            <g id="node_ep_srvs" onclick="inspectDevice('SERVER-FARM')" class="cursor-pointer group">
+              <rect x="740" y="560" width="230" height="65" rx="6" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.5" />
+              <text x="855" y="577" fill="#e9d5ff" font-size="10" font-weight="bold" text-anchor="middle">Server Room Assets</text>
+              <text x="855" y="591" fill="#c084fc" font-size="8" text-anchor="middle">• Prod: DNS/DHCP (.10), Mail (.11), Intranet (.12)</text>
+              <text x="855" y="603" fill="#c084fc" font-size="8" text-anchor="middle">• DBs: Mkt (.20), Sales (.21), Support (.22)</text>
+              <text x="855" y="616" fill="#f43f5e" font-size="8" font-weight="bold" text-anchor="middle">• Admin PC (VLAN 50) | Backup DB & Archive (VLAN 60)</text>
+            </g>
+          </svg>
+
+          <!-- Floating Simulation Result Badge -->
+          <div id="simLogBadge" class="absolute bottom-3 left-4 right-4 bg-slate-900/95 border border-slate-700/80 rounded-xl p-3 text-xs shadow-2xl backdrop-blur hidden flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span id="simLogIcon" class="text-lg">ℹ️</span>
+              <span id="simLogText" class="text-slate-300 font-medium">Ready</span>
+            </div>
+            <button onclick="document.getElementById('simLogBadge').classList.add('hidden')" class="text-slate-500 hover:text-white text-xs">✕</button>
+          </div>
+        </div>
+
+        <!-- Legend / Color Guide -->
+        <div class="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          <div class="flex items-center gap-4 flex-wrap">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Core & Routing</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Perimeter ASA Firewall</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Primary STP Active Link</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-600 inline-block"></span> Standby / Alternate Link</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> Isolated Server / Management</span>
+          </div>
+          <span class="text-slate-500">MSS Ltd Coursework Standard</span>
+        </div>
+      </div>
+
+      <!-- Right Panel: Step Detail & Device Inspector (4 Cols) -->
+      <div class="lg:col-span-4 space-y-6 flex flex-col">
+
+        <!-- Phase Implementation Detail Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <span id="detailPhaseBadge" class="px-2.5 py-1 text-xs rounded-full bg-blue-900/60 text-blue-300 border border-blue-700 font-semibold">PHASE 1</span>
+              <span id="detailCategory" class="text-xs text-slate-400">Physical Cabling</span>
+            </div>
+
+            <h3 id="detailTitle" class="text-lg font-bold text-white mb-2">Build The Physical Topology</h3>
+            <p id="detailDesc" class="text-xs text-slate-300 leading-relaxed mb-4">
+              Place all 10 network appliances and 64 endpoints onto the Packet Tracer workspace. Connect vertical uplinks using copper straight-through cables.
+            </p>
+
+            <div class="space-y-3 mb-4">
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-1">Key Action Points:</div>
+                <ul id="detailBullets" class="list-disc list-inside space-y-1 text-slate-300">
+                  <li>Place 2x 2911 Routers (ISP-R1, EDGE-R1).</li>
+                  <li>Place 1x ASA 5505 (FW-ASA1).</li>
+                  <li>Place 2x 3560-24PS Multilayer Core Switches.</li>
+                  <li>Place 5x 2960-24TT Access Switches.</li>
+                </ul>
+              </div>
+
+              <!-- CLI Snippet Box -->
+              <div class="relative bg-slate-950 rounded-xl border border-slate-800 p-3 font-mono text-xs overflow-hidden">
+                <div class="flex justify-between items-center text-[10px] text-slate-400 pb-2 border-b border-slate-800 mb-2">
+                  <span id="cliTitle">Device CLI Configuration</span>
+                  <button onclick="copySnippet()" class="text-blue-400 hover:text-blue-300">Copy Code</button>
+                </div>
+                <pre id="cliCode" class="text-slate-300 text-[11px] overflow-x-auto max-h-48 leading-relaxed whitespace-pre-wrap">! Physical placement only - no IP commands needed yet.</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+            <span class="text-slate-400">Step <span id="currentStepNum">1</span> of 11</span>
+            <div class="flex gap-2">
+              <button onclick="prevStep()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200">Prev</button>
+              <button onclick="nextStep()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold">Next Phase</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Device Quick Inspector -->
+        <div id="inspectorPanel" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-base text-blue-400">🔍</span>
+              <h4 id="inspDeviceName" class="font-bold text-white text-sm">CORE-SW1 (Selected)</h4>
+            </div>
+            <span id="inspDeviceRole" class="text-[11px] px-2 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-800">Multilayer Switch</span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between py-1 border-b border-slate-800/60">
+              <span class="text-slate-400">Model:</span>
+              <span id="inspModel" class="text-slate-200 font-mono">Cisco 3560-24PS</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/60">
+              <span class="text-slate-400">Transit IP / Subnet:</span>
+              <span id="inspIP" class="text-slate-200 font-mono">10.255.0.2 / 10.255.0.4 HSRP</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/60">
+              <span class="text-slate-400">SVIs Hosted:</span>
+              <span id="inspVlans" class="text-slate-200 font-mono">VLAN 10, 20, 30, 40, 50, 60</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/60">
+              <span class="text-slate-400">Redundancy Status:</span>
+              <span id="inspRedundancy" class="text-emerald-400 font-semibold font-mono">HSRP Active (Priority 110)</span>
+            </div>
+            <div class="py-1">
+              <span class="text-slate-400 block mb-1">Key Diagnostic Command:</span>
+              <code id="inspCmd" class="block bg-slate-950 p-2 rounded text-blue-300 font-mono text-[10px]">show standby brief && show ip route</code>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom Tabs: Addressing Matrix & Coursework Verification Checklist -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div class="flex border-b border-slate-800 gap-6 text-sm mb-4">
+        <button onclick="switchTab('addressing')" id="tabBtnAddressing" class="tab-btn active pb-3 transition">VLAN & Addressing Master Matrix</button>
+        <button onclick="switchTab('testing')" id="tabBtnTesting" class="tab-btn pb-3 text-slate-400 hover:text-slate-200 transition">Coursework Verification Tests</button>
+        <button onclick="switchTab('firewall')" id="tabBtnFirewall" class="tab-btn pb-3 text-slate-400 hover:text-slate-200 transition">Firewall & Security Rules</button>
+        <button onclick="switchTab('promptsInfo')" id="tabBtnPromptsInfo" class="tab-btn pb-3 text-slate-400 hover:text-slate-200 transition">AI Generation Prompt Guide</button>
+      </div>
+
+      <!-- Tab 1: Addressing Master Matrix -->
+      <div id="tabContentAddressing" class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider bg-slate-950/60">
+              <th class="p-3">VLAN</th>
+              <th class="p-3">Department / Name</th>
+              <th class="p-3">Subnet</th>
+              <th class="p-3">Subnet Mask</th>
+              <th class="p-3">HSRP Virtual IP (Gateway)</th>
+              <th class="p-3">CORE-SW1 (Pri 110)</th>
+              <th class="p-3">CORE-SW2 (Pri 100)</th>
+              <th class="p-3">DHCP / Static Scope</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-300">
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-blue-400">10</td>
+              <td class="p-3 font-semibold text-white">MARKETING</td>
+              <td class="p-3 font-mono">192.168.10.0/27</td>
+              <td class="p-3 font-mono">255.255.255.224</td>
+              <td class="p-3 font-mono text-emerald-400 font-bold">192.168.10.1</td>
+              <td class="p-3 font-mono">192.168.10.2</td>
+              <td class="p-3 font-mono">192.168.10.3</td>
+              <td class="p-3">DHCP Pool (.10 - .29)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-blue-400">20</td>
+              <td class="p-3 font-semibold text-white">SALES</td>
+              <td class="p-3 font-mono">192.168.20.0/26</td>
+              <td class="p-3 font-mono">255.255.255.192</td>
+              <td class="p-3 font-mono text-emerald-400 font-bold">192.168.20.1</td>
+              <td class="p-3 font-mono">192.168.20.2</td>
+              <td class="p-3 font-mono">192.168.20.3</td>
+              <td class="p-3">DHCP Pool (.10 - .34)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-blue-400">30</td>
+              <td class="p-3 font-semibold text-white">SUPPORT</td>
+              <td class="p-3 font-mono">192.168.30.0/27</td>
+              <td class="p-3 font-mono">255.255.255.224</td>
+              <td class="p-3 font-mono text-emerald-400 font-bold">192.168.30.1</td>
+              <td class="p-3 font-mono">192.168.30.2</td>
+              <td class="p-3 font-mono">192.168.30.3</td>
+              <td class="p-3">DHCP Pool (.10 - .24)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-blue-400">40</td>
+              <td class="p-3 font-semibold text-white">SERVERS</td>
+              <td class="p-3 font-mono">192.168.40.0/27</td>
+              <td class="p-3 font-mono">255.255.255.224</td>
+              <td class="p-3 font-mono text-emerald-400 font-bold">192.168.40.1</td>
+              <td class="p-3 font-mono">192.168.40.2</td>
+              <td class="p-3 font-mono">192.168.40.3</td>
+              <td class="p-3 text-amber-400 font-medium">Static Assignments (.10 - .22)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-blue-400">50</td>
+              <td class="p-3 font-semibold text-white">MANAGEMENT</td>
+              <td class="p-3 font-mono">192.168.50.0/28</td>
+              <td class="p-3 font-mono">255.255.255.240</td>
+              <td class="p-3 font-mono text-emerald-400 font-bold">192.168.50.1</td>
+              <td class="p-3 font-mono">192.168.50.2</td>
+              <td class="p-3 font-mono">192.168.50.3</td>
+              <td class="p-3">ADMIN-PC (.10 static) + Switches</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-blue-400">60</td>
+              <td class="p-3 font-semibold text-white">BACKUP</td>
+              <td class="p-3 font-mono">192.168.60.0/28</td>
+              <td class="p-3 font-mono">255.255.255.240</td>
+              <td class="p-3 font-mono text-emerald-400 font-bold">192.168.60.1</td>
+              <td class="p-3 font-mono">192.168.60.2</td>
+              <td class="p-3 font-mono">192.168.60.3</td>
+              <td class="p-3 text-purple-400 font-medium">Protected Servers (.10, .11)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="p-3 font-mono font-bold text-slate-500">99</td>
+              <td class="p-3 font-semibold text-slate-400">NATIVE-BLACKHOLE</td>
+              <td class="p-3 font-mono text-slate-500">Unused / Blackhole</td>
+              <td class="p-3 font-mono text-slate-500">N/A</td>
+              <td class="p-3 font-mono text-slate-500">None</td>
+              <td class="p-3 font-mono text-slate-500">No IP</td>
+              <td class="p-3 font-mono text-slate-500">No IP</td>
+              <td class="p-3 text-slate-500">Security Blackhole for Unused Ports</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 2: Coursework Verification Tests -->
+      <div id="tabContentTesting" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-blue-400 mb-2 flex items-center gap-1.5">
+            <span>📡</span> Functional Connectivity Tests
+          </div>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> DHCP IP lease test on MKT-PC01 (192.168.10.10).</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Ping default gateway 192.168.10.1 (HSRP virtual IP).</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> DNS resolution of <code class="text-blue-300">intranet.mss.local</code> (192.168.40.12).</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> HTTP browse internal department DB portals (.20, .21, .22).</li>
+          </ul>
+        </div>
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+            <span>🛡️</span> Security & Policy Enforcement
+          </div>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Web browser access to external <code class="text-amber-300">198.51.100.10</code> via NAT.</li>
+            <li class="flex items-start gap-2"><span class="text-rose-400">✗</span> Direct inbound ping from Internet to internal host blocked by ASA.</li>
+            <li class="flex items-start gap-2"><span class="text-rose-400">✗</span> Marketing PC blocked from accessing Backup VLAN 60 (ACL 101).</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Admin PC in VLAN 50 successfully connects to Backup & Management.</li>
+          </ul>
+        </div>
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-purple-400 mb-2 flex items-center gap-1.5">
+            <span>⚡</span> High Availability & Redundancy
+          </div>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Continuous ping <code class="text-purple-300">ping -t 198.51.100.10</code> from PC.</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Administratively shutdown CORE-SW1 or unplug Fa0/24.</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> CORE-SW2 assumes Active HSRP state within 3 hello intervals.</li>
+            <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Traffic recovers with at most 1-2 dropped packets!</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tab 3: Firewall & Security Rules -->
+      <div id="tabContentFirewall" class="hidden text-xs space-y-3">
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-amber-400 mb-2">ASA 5505 Security Architecture & Inspection Policy</div>
+          <p class="text-slate-300 mb-3">
+            The ASA 5505 operates with security levels: <span class="text-emerald-400 font-semibold">Inside (Security Level 100)</span> and <span class="text-rose-400 font-semibold">Outside (Security Level 0)</span>.
+            Higher security level traffic is permitted outbound automatically, and return state table entries are dynamically created.
+          </p>
+          <div class="font-mono text-[11px] bg-slate-900 p-3 rounded border border-slate-800 text-slate-300 leading-relaxed">
+policy-map global_policy<br/>
+&nbsp;class inspection_default<br/>
+&nbsp;&nbsp;inspect icmp<br/>
+&nbsp;&nbsp;inspect http<br/>
+&nbsp;&nbsp;inspect dns<br/>
+! Route all internal subnets back to HSRP virtual IP on transit:<br/>
+route inside 192.168.0.0 255.255.0.0 10.255.0.4 1
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: AI Generation Prompt Guide -->
+      <div id="tabContentPromptsInfo" class="hidden text-xs space-y-3">
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-blue-400 mb-2">How to Use the Dedicated AI Prompts Folder</div>
+          <p class="text-slate-300 leading-relaxed mb-3">
+            A complete companion folder named <code class="text-blue-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">ai-prompts/</code> has been generated in your workspace. You can provide these prompts directly to any advanced AI (ChatGPT, Claude 3.5 Sonnet, Gemini Pro/Flash) to generate exact configuration blocks, troubleshoot issues, or prepare coursework documentation.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-300">
+            <div class="p-3 bg-slate-900/60 rounded border border-slate-800">
+              <span class="font-semibold text-white block mb-1">Modular Workflow:</span>
+              Use Prompts 01 through 07 sequentially to instruct an AI step-by-step through cabling, VLAN config, HSRP, ASA policies, and testing.
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded border border-slate-800">
+              <span class="font-semibold text-white block mb-1">Single-Shot Master Prompt:</span>
+              Use <code class="text-blue-300">MASTER_ALL_IN_ONE_PROMPT.md</code> when working with large context window AIs to get a complete, turnkey implementation guide in one response.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // State management
+    let currentStep = 1;
+    const totalSteps = 11;
+    let autoPlayInterval = null;
+
+    // Phase Data
+    const phases = [
+      {
+        step: 1,
+        title: "Build Physical Topology & Cabling",
+        category: "Physical Cabling",
+        desc: "Place all required routers (2911), ASA 5505 firewall, 3560 core switches, 2960 access switches, and servers into their respective tiers. Connect all vertical uplinks.",
+        bullets: [
+          "Place ISP-R1 and EDGE-R1 (2911 Routers) at the WAN edge.",
+          "Place FW-ASA1 (ASA 5505) between EDGE-R1 and the core.",
+          "Place CORE-SW1 & CORE-SW2 (3560-24PS) side by side.",
+          "Wire dual uplinks from each access switch to both core switches."
+        ],
+        cliTitle: "Physical Verification Commands",
+        cliCode: `! On each switch / router, verify interface hardware status:
+show interfaces status
+show ip interface brief`,
+        highlightNodes: ["node_internet", "node_isp", "node_edge", "node_asa", "node_core1", "node_core2"]
+      },
+      {
+        step: 2,
+        title: "VLAN Creation & 802.1Q Trunking",
+        category: "Layer 2 Infrastructure",
+        desc: "Create VLANs 10 (Marketing), 20 (Sales), 30 (Support), 40 (Servers), 50 (Management), 60 (Backup), and 99 (Blackhole) across all switches. Set up 802.1Q trunks with native VLAN 99.",
+        bullets: [
+          "Configure trunking on inter-core link (CORE-SW1 Gi0/1 <-> CORE-SW2 Gi0/1).",
+          "Set switchport trunk encapsulation dot1q on 3560 switches.",
+          "Change native VLAN to 99 to prevent VLAN hopping attacks.",
+          "Prune unnecessary VLANs to optimize broadcast domain boundaries."
+        ],
+        cliTitle: "CORE-SW1 Trunk Configuration",
+        cliCode: `vlan 10
+ name MARKETING
+vlan 20
+ name SALES
+vlan 30
+ name SUPPORT
+vlan 40
+ name SERVERS
+vlan 50
+ name MANAGEMENT
+vlan 60
+ name BACKUP
+vlan 99
+ name NATIVE-BLACKHOLE
+exit
+interface GigabitEthernet0/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99`,
+        highlightNodes: ["node_core1", "node_core2"]
+      },
+      {
+        step: 3,
+        title: "Inter-VLAN Routing & SVIs",
+        category: "Layer 3 Routing",
+        desc: "Enable 'ip routing' on the multilayer core switches. Configure Switched Virtual Interfaces (SVIs) for each departmental VLAN to enable wire-speed inter-VLAN routing.",
+        bullets: [
+          "Execute 'ip routing' on CORE-SW1 and CORE-SW2.",
+          "Assign physical IP addresses on SVI interfaces (.2 for Core 1, .3 for Core 2).",
+          "Configure Fa0/24 transit interface towards FW-ASA1 inside network (10.255.0.0/29).",
+          "Set default route 'ip route 0.0.0.0 0.0.0.0 10.255.0.1' pointing to FW-ASA1."
+        ],
+        cliTitle: "CORE-SW1 SVI Configuration",
+        cliCode: `ip routing
+interface Vlan10
+ ip address 192.168.10.2 255.255.255.224
+ no shutdown
+interface Vlan20
+ ip address 192.168.20.2 255.255.255.192
+ no shutdown
+interface Vlan30
+ ip address 192.168.30.2 255.255.255.224
+ no shutdown
+interface Vlan40
+ ip address 192.168.40.2 255.255.255.224
+ no shutdown
+ip route 0.0.0.0 0.0.0.0 10.255.0.1`,
+        highlightNodes: ["node_core1", "node_core2", "node_asa"]
+      },
+      {
+        step: 4,
+        title: "High Availability (HSRP & Rapid-PVST+)",
+        category: "Redundancy Architecture",
+        desc: "Deploy HSRP Group 10-60 so departmental PCs have a reliable virtual default gateway (.1). Configure CORE-SW1 with priority 110 (Active) and preempt, and CORE-SW2 with priority 100 (Standby).",
+        bullets: [
+          "Configure standby ip 192.168.x.1 across all departmental SVIs.",
+          "Enable 'standby 10 preempt' so Core 1 regains Active status upon recovery.",
+          "Set Spanning Tree root primary on Core 1 and root secondary on Core 2.",
+          "Configure HSRP virtual IP 10.255.0.4 on transit VLAN towards ASA firewall."
+        ],
+        cliTitle: "CORE-SW1 HSRP & STP Commands",
+        cliCode: `spanning-tree mode rapid-pvst
+spanning-tree vlan 10,20,30,40,50,60,99 root primary
+
+interface Vlan10
+ standby 10 ip 192.168.10.1
+ standby 10 priority 110
+ standby 10 preempt
+interface Vlan20
+ standby 20 ip 192.168.20.1
+ standby 20 priority 110
+ standby 20 preempt`,
+        highlightNodes: ["node_core1", "node_core2"]
+      },
+      {
+        step: 5,
+        title: "Access Switches & Floor Port Allocation",
+        category: "Access Layer",
+        desc: "Configure 2960 access switches on each floor. Assign user ports to their department VLANs in access mode and enable Spanning-Tree PortFast with BPDU Guard.",
+        bullets: [
+          "SW-MKT: FastEthernet0/1-20 assigned to VLAN 10.",
+          "SW-SALES-A: FastEthernet0/1-24 assigned to VLAN 20.",
+          "SW-SALES-B: FastEthernet0/1 assigned to Sales PC 25 (future expansion).",
+          "SW-SUPPORT: FastEthernet0/1-15 assigned to VLAN 30."
+        ],
+        cliTitle: "SW-MKT Access Port Hardening",
+        cliCode: `interface range FastEthernet0/1 - 20
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+! Disable unused ports:
+interface range FastEthernet0/21 - 24
+ shutdown`,
+        highlightNodes: ["node_sw_mkt", "node_sw_salesa", "node_sw_salesb", "node_sw_sup", "node_sw_srv"]
+      },
+      {
+        step: 6,
+        title: "Server Farm Deployment & Services",
+        category: "Services & Applications",
+        desc: "Deploy internal servers in VLAN 40, VLAN 50, and VLAN 60. Configure static IP addresses and enable DHCP, DNS, HTTP, and Email services.",
+        bullets: [
+          "INFRA-SRV (192.168.40.10): Configured with DHCP scopes for VLANs 10, 20, 30.",
+          "INFRA-SRV DNS: Resolves intranet.mss.local, mail.mss.local, db portals.",
+          "INTRANET-SRV (192.168.40.12): Hosts company intranet home page.",
+          "BACKUP-DB-SRV (192.168.60.10): Secure isolated backup storage."
+        ],
+        cliTitle: "IP Helper Address on Core SVIs",
+        cliCode: `! On CORE-SW1 and CORE-SW2 SVIs, forward DHCP requests to INFRA-SRV:
+interface Vlan10
+ ip helper-address 192.168.40.10
+interface Vlan20
+ ip helper-address 192.168.40.10
+interface Vlan30
+ ip helper-address 192.168.40.10`,
+        highlightNodes: ["node_ep_srvs", "node_sw_srv"]
+      },
+      {
+        step: 7,
+        title: "Perimeter Security (ASA 5505 Firewall)",
+        category: "Network Security",
+        desc: "Configure ASA 5505 with inside interface (VLAN 1, security-level 100) and outside interface (VLAN 2, security-level 0). Enable stateful inspection for HTTP, DNS, and ICMP.",
+        bullets: [
+          "Inside interface E0/1-2: 10.255.0.1/29 connecting to Core switches.",
+          "Outside interface E0/0: 10.255.1.2/30 connecting to EDGE-R1.",
+          "Route inside subnets (192.168.0.0/16) to HSRP virtual IP 10.255.0.4.",
+          "Route Internet traffic (0.0.0.0/0) to EDGE-R1 (10.255.1.1)."
+        ],
+        cliTitle: "FW-ASA1 Core Security Commands",
+        cliCode: `interface Vlan1
+ nameif inside
+ security-level 100
+ ip address 10.255.0.1 255.255.255.248
+interface Vlan2
+ nameif outside
+ security-level 0
+ ip address 10.255.1.2 255.255.255.252
+route inside 192.168.0.0 255.255.0.0 10.255.0.4 1
+route outside 0.0.0.0 0.0.0.0 10.255.1.1 1`,
+        highlightNodes: ["node_asa", "node_edge"]
+      },
+      {
+        step: 8,
+        title: "Company Edge Router (NAT Overload)",
+        category: "Internet Routing",
+        desc: "Configure EDGE-R1 with inside interface towards ASA and outside WAN link to ISP-R1. Set up NAT Overload (PAT) so internal private addresses can reach the public Internet.",
+        bullets: [
+          "G0/0 (Inside): 10.255.1.1/30 (ip nat inside).",
+          "G0/2 (Outside WAN): 203.0.113.2/30 (ip nat outside).",
+          "Standard ACL 1 matching private network 192.168.0.0/16.",
+          "NAT Overload: ip nat inside source list 1 interface GigabitEthernet0/2 overload."
+        ],
+        cliTitle: "EDGE-R1 NAT & Route Configuration",
+        cliCode: `interface GigabitEthernet0/0
+ ip address 10.255.1.1 255.255.255.252
+ ip nat inside
+ no shutdown
+interface GigabitEthernet0/2
+ ip address 203.0.113.2 255.255.255.252
+ ip nat outside
+ no shutdown
+access-list 1 permit 192.168.0.0 0.0.255.255
+ip nat inside source list 1 interface GigabitEthernet0/2 overload
+ip route 0.0.0.0 0.0.0.0 203.0.113.1
+ip route 192.168.0.0 255.255.0.0 10.255.1.2`,
+        highlightNodes: ["node_edge", "node_isp"]
+      },
+      {
+        step: 9,
+        title: "Department PC Configuration & DHCP Verification",
+        category: "Endpoints",
+        desc: "Switch all 60 department PCs (Marketing, Sales, General Support) from Static to DHCP. Verify that each host leases an IP, gateway 192.168.x.1, and DNS 192.168.40.10.",
+        bullets: [
+          "MKT-PC01 to MKT-PC20 receive IP in 192.168.10.0/27.",
+          "SALES-PC01 to SALES-PC25 receive IP in 192.168.20.0/26.",
+          "SUP-PC01 to SUP-PC15 receive IP in 192.168.30.0/27.",
+          "ADMIN-PC is statically configured at 192.168.50.10 in VLAN 50."
+        ],
+        cliTitle: "PC Command Prompt Verification",
+        cliCode: `ipconfig /all
+ping 192.168.40.10
+nslookup intranet.mss.local`,
+        highlightNodes: ["node_ep_mkt", "node_ep_sales", "node_ep_sup"]
+      },
+      {
+        step: 10,
+        title: "Security Hardening & Access Control Lists",
+        category: "Hardening & Policy",
+        desc: "Implement Port Security on user ports, apply Access Control Lists (ACLs) to protect Backup VLAN 60 and isolate sensitive subnets, configure SSH with RSA keys and disable Telnet.",
+        bullets: [
+          "Apply switchport port-security maximum 2 with violation restrict.",
+          "Apply ACL 101 on CORE-SW1/2: Only permit ADMIN-PC (VLAN 50) to access Backup VLAN 60.",
+          "Enforce transport input ssh on all VTY lines.",
+          "Configure enable secret and local admin username with privilege 15."
+        ],
+        cliTitle: "Core Switch ACL 101 Configuration",
+        cliCode: `ip access-list extended BACKUP_PROTECT
+ permit ip 192.168.50.0 0.0.0.15 192.168.60.0 0.0.0.15
+ permit tcp 192.168.40.0 0.0.0.31 192.168.60.0 0.0.0.15 eq 80
+ deny ip any 192.168.60.0 0.0.0.15
+ permit ip any any
+interface Vlan60
+ ip access-group BACKUP_PROTECT in`,
+        highlightNodes: ["node_core1", "node_core2", "node_ep_srvs"]
+      },
+      {
+        step: 11,
+        title: "End-to-End Verification & Redundancy Failover",
+        category: "Final QA & Evidence",
+        desc: "Execute complete test matrix: DNS resolution, Web browsing to public Internet (198.51.100.10), departmental database queries, ACL denial tests, and simulate CORE-SW1 power failure.",
+        bullets: [
+          "Test 1: Ping 198.51.100.10 from MKT-PC01 (Verifies HSRP -> ASA -> NAT -> ISP).",
+          "Test 2: Attempt ping from MKT-PC01 to BACKUP-DB-SRV (Must fail - ACL verified).",
+          "Test 3: Start continuous ping, shut down CORE-SW1 Fa0/24.",
+          "Test 4: Capture screenshot of HSRP standby becoming active on CORE-SW2."
+        ],
+        cliTitle: "Redundancy Verification Commands",
+        cliCode: `! On CORE-SW2 verify takeover:
+show standby brief
+show ip route
+show spanning-tree summary`,
+        highlightNodes: ["node_core1", "node_core2", "node_edge", "node_internet"]
+      }
+    ];
+
+    // Device detail dictionary
+    const deviceData = {
+      "INTERNET-SRV": {
+        role: "External Internet Web & DNS Server",
+        model: "Generic Server",
+        ip: "198.51.100.10 / 255.255.255.0",
+        vlans: "External Public Internet",
+        redundancy: "Standalone External Simulation",
+        cmd: "Desktop > Web Browser > Browse 198.51.100.10"
+      },
+      "ISP-R1": {
+        role: "External Tier-1 Internet Service Provider Router",
+        model: "Cisco 2911 Router",
+        ip: "G0/0: 203.0.113.1/30 | G0/1: 198.51.100.1/24",
+        vlans: "Public Routed WAN",
+        redundancy: "ISP Gateway",
+        cmd: "show ip route && show ip interface brief"
+      },
+      "EDGE-R1": {
+        role: "Company Perimeter Edge Router (PAT / NAT Overload)",
+        model: "Cisco 2911 Router",
+        ip: "G0/0: 10.255.1.1/30 (In) | G0/2: 203.0.113.2/30 (Out)",
+        vlans: "Perimeter Transit & WAN",
+        redundancy: "Default Internet Gateway (0.0.0.0/0 -> ISP)",
+        cmd: "show ip nat translations && show ip nat statistics"
+      },
+      "FW-ASA1": {
+        role: "Stateful Inspection Perimeter Firewall",
+        model: "Cisco ASA 5505",
+        ip: "Inside (VLAN 1): 10.255.0.1/29 | Outside (VLAN 2): 10.255.1.2/30",
+        vlans: "Security Zones (Inside: 100, Outside: 0)",
+        redundancy: "Transit to Core HSRP virtual IP 10.255.0.4",
+        cmd: "show running-config interface && show route"
+      },
+      "CORE-SW1": {
+        role: "Primary Multilayer Core Switch (HSRP Active / STP Root)",
+        model: "Cisco 3560-24PS",
+        ip: "10.255.0.2/29 (Transit) | SVIs .2 (VLANs 10-60)",
+        vlans: "10, 20, 30, 40, 50, 60, 99 (Dot1q Trunking)",
+        redundancy: "HSRP Priority 110 (Preempt Enabled) - Primary Gateway",
+        cmd: "show standby brief && show ip route"
+      },
+      "CORE-SW2": {
+        role: "Secondary Multilayer Core Switch (HSRP Standby)",
+        model: "Cisco 3560-24PS",
+        ip: "10.255.0.3/29 (Transit) | SVIs .3 (VLANs 10-60)",
+        vlans: "10, 20, 30, 40, 50, 60, 99 (Dot1q Trunking)",
+        redundancy: "HSRP Priority 100 - Hot Standby Failover Target",
+        cmd: "show standby brief && show spanning-tree"
+      },
+      "SW-MKT": {
+        role: "Floor 1 Access Switch - Marketing Department",
+        model: "Cisco 2960-24TT",
+        ip: "Management SVI: 192.168.50.11/28",
+        vlans: "VLAN 10 Access (Fa0/1-20), VLAN 99 Native",
+        redundancy: "Dual 802.1Q uplinks to CORE-SW1 & CORE-SW2",
+        cmd: "show interfaces status && show mac address-table"
+      },
+      "SW-SALES-A": {
+        role: "Floor 2 Access Switch - Sales Department (Users 01-24)",
+        model: "Cisco 2960-24TT",
+        ip: "Management SVI: 192.168.50.12/28",
+        vlans: "VLAN 20 Access (Fa0/1-24)",
+        redundancy: "Dual 802.1Q uplinks to Core switches",
+        cmd: "show port-security interface fa0/1"
+      },
+      "SW-SALES-B": {
+        role: "Floor 2 Expansion Access Switch - Sales User 25 & Future Growth",
+        model: "Cisco 2960-24TT",
+        ip: "Management SVI: 192.168.50.13/28",
+        vlans: "VLAN 20 Access (Fa0/1), spare capacity",
+        redundancy: "Dual 802.1Q uplinks to Core switches",
+        cmd: "show vlan brief"
+      },
+      "SW-SUPPORT": {
+        role: "Floor 3 Access Switch - General Support Department",
+        model: "Cisco 2960-24TT",
+        ip: "Management SVI: 192.168.50.14/28",
+        vlans: "VLAN 30 Access (Fa0/1-15)",
+        redundancy: "Dual 802.1Q uplinks to Core switches",
+        cmd: "show spanning-tree interface fa0/1"
+      },
+      "SW-SERVER": {
+        role: "Server Room Access Switch",
+        model: "Cisco 2960-24TT",
+        ip: "Management SVI: 192.168.50.15/28",
+        vlans: "VLAN 40 (Prod), VLAN 50 (Admin), VLAN 60 (Backup)",
+        redundancy: "Dual 802.1Q uplinks to Core switches",
+        cmd: "show interfaces trunk"
+      },
+      "MKT-PCS": {
+        role: "Marketing Workstations (20 Endpoints)",
+        model: "Generic PC (MKT-PC01 to MKT-PC20)",
+        ip: "192.168.10.10 - 192.168.10.29 via DHCP",
+        vlans: "VLAN 10 (Marketing Subnet: 192.168.10.0/27)",
+        redundancy: "Default Gateway 192.168.10.1 (HSRP Virtual IP)",
+        cmd: "ipconfig /all && ping 192.168.40.12"
+      },
+      "SALES-PCS": {
+        role: "Sales Workstations (25 Endpoints across 2 Switches)",
+        model: "Generic PC (SALES-PC01 to SALES-PC25)",
+        ip: "192.168.20.10 - 192.168.20.34 via DHCP",
+        vlans: "VLAN 20 (Sales Subnet: 192.168.20.0/26)",
+        redundancy: "Default Gateway 192.168.20.1 (HSRP Virtual IP)",
+        cmd: "ipconfig /all && ping 192.168.40.21"
+      },
+      "SUP-PCS": {
+        role: "General Support Workstations (15 Endpoints)",
+        model: "Generic PC (SUP-PC01 to SUP-PC15)",
+        ip: "192.168.30.10 - 192.168.30.24 via DHCP",
+        vlans: "VLAN 30 (Support Subnet: 192.168.30.0/27)",
+        redundancy: "Default Gateway 192.168.30.1 (HSRP Virtual IP)",
+        cmd: "ipconfig /all && ping 192.168.40.22"
+      },
+      "SERVER-FARM": {
+        role: "Production, DB, Management & Backup Server Compound",
+        model: "Cisco Generic Servers & Workstation",
+        ip: "VLAN 40: .10-.22 | VLAN 50: .10 | VLAN 60: .10-.11",
+        vlans: "VLANs 40, 50, 60",
+        redundancy: "Dual Core Routing + HSRP Gateways",
+        cmd: "Desktop > Services > DHCP / DNS / HTTP Status"
+      }
+    };
+
+    // Update Phase details in UI
+    function renderStep(stepNum) {
+      currentStep = stepNum;
+      const data = phases[stepNum - 1];
+
+      document.getElementById("stepIndicator").textContent = `Phase ${stepNum} of ${totalSteps}`;
+      document.getElementById("currentStepNum").textContent = stepNum;
+      document.getElementById("stepNameMini").textContent = data.title;
+      document.getElementById("detailPhaseBadge").textContent = `PHASE ${stepNum}`;
+      document.getElementById("detailCategory").textContent = data.category;
+      document.getElementById("detailTitle").textContent = data.title;
+      document.getElementById("detailDesc").textContent = data.desc;
+      document.getElementById("cliTitle").textContent = data.cliTitle;
+      document.getElementById("cliCode").textContent = data.cliCode;
+
+      // Update Bullets
+      const bulletList = document.getElementById("detailBullets");
+      bulletList.innerHTML = "";
+      data.bullets.forEach(b => {
+        const li = document.createElement("li");
+        li.textContent = b;
+        bulletList.appendChild(li);
+      });
+
+      // Clear previous node highlights
+      document.querySelectorAll("g[id^='node_']").forEach(el => {
+        el.classList.remove("pulse-device");
+      });
+
+      // Highlight active phase nodes
+      if (data.highlightNodes) {
+        data.highlightNodes.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add("pulse-device");
+        });
+      }
+    }
+
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        renderStep(currentStep + 1);
+      } else {
+        renderStep(1);
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) {
+        renderStep(currentStep - 1);
+      } else {
+        renderStep(totalSteps);
+      }
+    }
+
+    function toggleAutoPlay() {
+      const btn = document.getElementById("autoPlayBtn");
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        btn.textContent = "▶ Auto";
+        btn.classList.remove("bg-blue-600", "text-white");
+        btn.classList.add("bg-slate-800", "text-slate-300");
+      } else {
+        autoPlayInterval = setInterval(() => {
+          nextStep();
+        }, 4000);
+        btn.textContent = "⏸ Pause";
+        btn.classList.remove("bg-slate-800", "text-slate-300");
+        btn.classList.add("bg-blue-600", "text-white");
+      }
+    }
+
+    // Inspect Device Logic
+    function inspectDevice(name) {
+      const d = deviceData[name];
+      if (!d) return;
+
+      document.getElementById("inspDeviceName").textContent = `${name} (Selected)`;
+      document.getElementById("inspDeviceRole").textContent = d.role.split("(")[0];
+      document.getElementById("inspModel").textContent = d.model;
+      document.getElementById("inspIP").textContent = d.ip;
+      document.getElementById("inspVlans").textContent = d.vlans;
+      document.getElementById("inspRedundancy").textContent = d.redundancy;
+      document.getElementById("inspCmd").textContent = d.cmd;
+
+      // Scroll inspector gently into view if on small screens
+      if (window.innerWidth < 1024) {
+        document.getElementById("inspectorPanel").scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Tabs Switcher
+    function switchTab(tabId) {
+      const tabs = ['addressing', 'testing', 'firewall', 'promptsInfo'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const content = document.getElementById(`tabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (t === tabId) {
+          btn.classList.add('active');
+          btn.classList.remove('text-slate-400');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('active');
+          btn.classList.add('text-slate-400');
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    // Animated Simulation Scenarios
+    let animTimer = null;
+
+    function resetSimulation() {
+      if (animTimer) clearTimeout(animTimer);
+      // Reset packet circles
+      const p1 = document.getElementById("animPacket1");
+      const p2 = document.getElementById("animPacket2");
+      const pDrop = document.getElementById("animPacketDrop");
+      [p1, p2, pDrop].forEach(p => {
+        p.setAttribute("opacity", "0");
+        p.setAttribute("cx", "0");
+        p.setAttribute("cy", "0");
+      });
+
+      // Reset cables
+      document.querySelectorAll("path[id^='link_']").forEach(link => {
+        link.classList.remove("cable-active", "cable-failover");
+        link.setAttribute("stroke", link.id === 'link_core1_core2' ? '#3b82f6' : (link.id.includes('core2_') ? '#334155' : '#475569'));
+      });
+
+      // Reset core switches
+      document.getElementById("rect_core1").setAttribute("stroke", "#3b82f6");
+      document.getElementById("rect_core2").setAttribute("stroke", "#64748b");
+      document.getElementById("core2StatusText").textContent = "HSRP Standby (Pri 100)";
+      document.getElementById("core2StatusText").setAttribute("fill", "#94a3b8");
+      document.getElementById("core2StatusCircle").setAttribute("fill", "#f59e0b");
+
+      document.getElementById("scenarioStatus").textContent = "Simulation Reset";
+      document.getElementById("simLogBadge").classList.add("hidden");
+    }
+
+    function showSimBadge(icon, msg) {
+      const badge = document.getElementById("simLogBadge");
+      document.getElementById("simLogIcon").textContent = icon;
+      document.getElementById("simLogText").innerHTML = msg;
+      badge.classList.remove("hidden");
+    }
+
+    function animateAlongPoints(packetEl, points, duration, callback) {
+      let startTime = null;
+      packetEl.setAttribute("opacity", "1");
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+
+        // Calculate segment
+        const totalSegments = points.length - 1;
+        const segIndex = Math.min(Math.floor(progress * totalSegments), totalSegments - 1);
+        const segProgress = (progress * totalSegments) - segIndex;
+
+        const pA = points[segIndex];
+        const pB = points[segIndex + 1];
+
+        const curX = pA[0] + (pB[0] - pA[0]) * segProgress;
+        const curY = pA[1] + (pB[1] - pA[1]) * segProgress;
+
+        packetEl.setAttribute("cx", curX);
+        packetEl.setAttribute("cy", curY);
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          if (callback) callback();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function runScenario(type) {
+      resetSimulation();
+      const status = document.getElementById("scenarioStatus");
+      const p1 = document.getElementById("animPacket1");
+
+      if (type === 'internet') {
+        status.textContent = "Simulating: Marketing PC accessing Public Internet Server (198.51.100.10)";
+        showSimBadge("🌐", "Outbound Flow: MKT-PC01 (192.168.10.15) ➔ SW-MKT ➔ CORE-SW1 (HSRP Gateway 192.168.10.1) ➔ FW-ASA1 (Stateful Inspection) ➔ EDGE-R1 (NAT Overload PAT ➔ 203.0.113.2) ➔ ISP-R1 ➔ INTERNET-SRV (198.51.100.10)");
+
+        const pathPoints = [
+          [120, 560], // MKT-PC
+          [120, 488], // SW-MKT
+          [280, 380], // CORE-SW1
+          [480, 310], // FW-ASA1
+          [500, 205], // EDGE-R1
+          [500, 115], // ISP-R1
+          [500, 30]   // INTERNET-SRV
+        ];
+
+        // Animate links
+        ['link_core1_mkt', 'link_asa_core1', 'link_edge_asa', 'link_isp_edge', 'link_internet_isp'].forEach(id => {
+          const l = document.getElementById(id);
+          if (l) {
+            l.setAttribute("stroke", "#38bdf8");
+            l.classList.add("cable-active");
+          }
+        });
+
+        p1.setAttribute("fill", "#38bdf8");
+        animateAlongPoints(p1, pathPoints, 2200, () => {
+          showSimBadge("✅", "Return Flow: Internet Server replies! EDGE-R1 translates destination back to 192.168.10.15 via NAT translation table; ASA permits stateful session return!");
+        });
+      }
+
+      else if (type === 'intranet') {
+        status.textContent = "Simulating: Sales PC accessing Internal Sales DB Portal (192.168.40.21)";
+        showSimBadge("📁", "Authorized Intranet Flow: SALES-PC05 (192.168.20.14) ➔ SW-SALES-A ➔ CORE-SW1 (Inter-VLAN SVI) ➔ SW-SERVER ➔ SALES-DB-SRV (192.168.40.21)");
+
+        const pathPoints = [
+          [290, 560], // SALES-PC
+          [290, 488], // SW-SALES-A
+          [280, 380], // CORE-SW1
+          [830, 488], // SW-SERVER
+          [855, 580]  // SALES-DB
+        ];
+
+        ['link_core1_salesa', 'link_core1_srv'].forEach(id => {
+          const l = document.getElementById(id);
+          if (l) {
+            l.setAttribute("stroke", "#10b981");
+            l.classList.add("cable-active");
+          }
+        });
+
+        p1.setAttribute("fill", "#10b981");
+        animateAlongPoints(p1, pathPoints, 1800, () => {
+          showSimBadge("✅", "Success: Inter-VLAN routing performed at line speed by CORE-SW1 hardware CEF (Cisco Express Forwarding) without hitting firewall!");
+        });
+      }
+
+      else if (type === 'blocked') {
+        status.textContent = "Simulating: Marketing PC attempting unauthorized access to Backup Server (192.168.60.10)";
+        showSimBadge("🚫", "Security Violation Attempt: MKT-PC02 (192.168.10.11) attempts HTTP connection to BACKUP-DB-SRV (192.168.60.10)");
+
+        const pathPoints = [
+          [120, 560], // MKT-PC
+          [120, 488], // SW-MKT
+          [280, 380]  // CORE-SW1
+        ];
+
+        document.getElementById('link_core1_mkt').setAttribute("stroke", "#f43f5e");
+        document.getElementById('link_core1_mkt').classList.add("cable-active");
+
+        p1.setAttribute("fill", "#f43f5e");
+        animateAlongPoints(p1, pathPoints, 1200, () => {
+          const pDrop = document.getElementById("animPacketDrop");
+          pDrop.setAttribute("cx", "280");
+          pDrop.setAttribute("cy", "380");
+          pDrop.setAttribute("opacity", "1");
+          showSimBadge("🛑", "PACKET DROPPED BY ACL 101: CORE-SW1 denies unauthorized access from VLAN 10 to Backup VLAN 60. Security policy successfully enforced!");
+        });
+      }
+
+      else if (type === 'failover') {
+        status.textContent = "Simulating: CORE-SW1 Failure & Seamless HSRP Preempt to CORE-SW2";
+        showSimBadge("⚡", "ALERT: CORE-SW1 hardware link disabled! HSRP keepalives missed on GigabitEthernet0/1 trunk.");
+
+        // Visual shutdown of Core 1
+        document.getElementById("rect_core1").setAttribute("stroke", "#ef4444");
+        document.getElementById("rect_core2").setAttribute("stroke", "#10b981");
+        document.getElementById("core2StatusText").textContent = "HSRP ACTIVE (Taken Over!)";
+        document.getElementById("core2StatusText").setAttribute("fill", "#34d399");
+        document.getElementById("core2StatusCircle").setAttribute("fill", "#10b981");
+
+        // Failover cable lighting
+        ['link_core2_mkt', 'link_asa_core2', 'link_edge_asa'].forEach(id => {
+          const l = document.getElementById(id);
+          if (l) {
+            l.setAttribute("stroke", "#a855f7");
+            l.classList.add("cable-failover");
+          }
+        });
+
+        const failoverPoints = [
+          [120, 560], // MKT-PC
+          [120, 488], // SW-MKT
+          [720, 380], // CORE-SW2 (Takes over!)
+          [520, 310], // FW-ASA1
+          [500, 205], // EDGE-R1
+          [500, 30]   // Internet
+        ];
+
+        p1.setAttribute("fill", "#a855f7");
+        animateAlongPoints(p1, failoverPoints, 2400, () => {
+          showSimBadge("🛡️", "FAILOVER SUCCESSFUL: CORE-SW2 answers virtual IP 192.168.10.1 / 10.255.0.4 with virtual MAC 0000.0c07.ac0a. Zero IP reconfiguration required on any PC!");
+        });
+      }
+
+      else if (type === 'backup') {
+        status.textContent = "Simulating: Authorized Admin PC in VLAN 50 performing backup to VLAN 60";
+        showSimBadge("🛡️", "Authorized Admin Task: ADMIN-PC (192.168.50.10) connecting to BACKUP-DB-SRV (192.168.60.10)");
+
+        const pathPoints = [
+          [830, 610], // Admin PC in Server compound
+          [830, 488], // SW-SERVER
+          [280, 380], // CORE-SW1
+          [830, 488], // SW-SERVER
+          [860, 616]  // BACKUP-DB-SRV
+        ];
+
+        document.getElementById('link_core1_srv').setAttribute("stroke", "#a855f7");
+        document.getElementById('link_core1_srv').classList.add("cable-active");
+
+        p1.setAttribute("fill", "#c084fc");
+        animateAlongPoints(p1, pathPoints, 1800, () => {
+          showSimBadge("✅", "ACCESS PERMITTED: ACL 101 rule 'permit ip 192.168.50.0 0.0.0.15 192.168.60.0 0.0.0.15' allows full administrative archive access!");
+        });
+      }
+    }
+
+    function copySnippet() {
+      const code = document.getElementById("cliCode").innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert("CLI commands copied to clipboard!");
+      });
+    }
+
+    // Initialize on load
+    window.addEventListener("DOMContentLoaded", () => {
+      renderStep(1);
+      inspectDevice("CORE-SW1");
+    });
+  </script>
+</body>
+</html>
+

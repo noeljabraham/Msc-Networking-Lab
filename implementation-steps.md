@@ -661,7 +661,7 @@ interface vlan 60
  standby 60 priority 100
  standby 60 preempt
  no shutdown
-exit
+exits
 ```
 
 Configure CORE-SW1 trunks and routed edge link:
@@ -669,6 +669,7 @@ Configure CORE-SW1 trunks and routed edge link:
 ```cisco
 interface range fastEthernet 0/1-5
  description ACCESS-SWITCH-TRUNK
+ switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan 99
  switchport trunk allowed vlan 10,20,30,40,50,60,99
@@ -677,6 +678,7 @@ exit
 
 interface gigabitEthernet 0/1
  description CORE-SW2-TRUNK
+ switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan 99
  switchport trunk allowed vlan 10,20,30,40,50,60,99
@@ -809,6 +811,7 @@ exit
 
 interface range fastEthernet 0/1-5
  description ACCESS-SWITCH-TRUNK
+ switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan 99
  switchport trunk allowed vlan 10,20,30,40,50,60,99
@@ -817,6 +820,7 @@ exit
 
 interface gigabitEthernet 0/1
  description CORE-SW1-TRUNK
+ switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan 99
  switchport trunk allowed vlan 10,20,30,40,50,60,99
