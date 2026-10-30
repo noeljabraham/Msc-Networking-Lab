@@ -1,0 +1,224 @@
+MSS LTD NETWORKING LAB
+FLOOR 1 - MARKETING SWITCH (FLOOR1-MKT-SW)
+Command and Configuration Record
+============================================================
+
+IMPORTANT NOTES
+---------------
+1. This document is reconstructed from the Packet Tracer screenshots and
+   commands shared in the conversation. It is NOT a complete device-generated
+   terminal transcript.
+2. `show history` on this switch displayed only a limited recent command
+   history. It did not contain every command entered earlier in the session.
+3. Passwords shown as Type 5 hashes cannot be converted back to their original
+   plaintext passwords. Do not assume suggested example passwords were used.
+4. The console password was visible in a screenshot. Treat it as exposed and
+   change it before using this configuration outside the isolated lab.
+5. The username/password and enable-secret hashes below are copied from the
+   displayed running configuration. Keep this file private.
+
+DEVICE DETAILS
+--------------
+Hostname: FLOOR1-MKT-SW
+Marketing VLAN: VLAN 10
+VLAN name: MARKETING
+Marketing subnet shown in topology: 192.168.10.0/27
+Switch uplink confirmed in configuration: GigabitEthernet0/1
+Second connected uplink/port: GigabitEthernet0/2 (not configured as trunk
+in the captured running configuration)
+
+CONFIGURATION CONFIRMED IN THE RUNNING-CONFIG SCREENSHOTS
+----------------------------------------------------------
+hostname FLOOR1-MKT-SW
+
+enable secret 5 $1$mERr$1VH70R6Ti08fo/Fbnu9Ao.
+
+username FL1MKTSWT secret 5 $1$mERr$uH83Ls.mnEegMpv re6dgc.
+[The exact hash string is shown as read from the screenshot; verify on device
+if you need a byte-for-byte record.]
+
+interface FastEthernet0/1
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+
+interface FastEthernet0/2
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+
+interface FastEthernet0/3
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+
+interface FastEthernet0/4
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+
+interface FastEthernet0/5
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+
+[The screenshots show VLAN 10 assigned to Fa0/1 through Fa0/10. The complete
+per-port running-config lines were not all visible in the supplied images.]
+
+interface GigabitEthernet0/1
+ switchport trunk allowed vlan 10
+ switchport mode trunk
+
+interface GigabitEthernet0/2
+[No additional configuration was visible.]
+
+interface Vlan1
+ no ip address
+ shutdown
+
+line con 0
+ password MKT1FC
+ login
+
+line vty 0 4
+ login
+
+line vty 5 15
+ login
+
+SECURITY SETTINGS OBSERVED
+--------------------------
+- `no service password-encryption` was present in the captured running config.
+  This means service password encryption was disabled at the time of capture.
+- An enable secret was configured.
+- A local username `FL1MKTSWT` was configured with a secret.
+- Console line password and `login` were configured.
+- No SSH configuration was confirmed in the screenshots.
+- VTY lines showed `login`; no `transport input ssh` or `transport input none`
+  was confirmed in the captured configuration.
+- This document does not claim that the switch is fully secured or fully
+  vulnerable. Verify the live configuration before testing.
+
+COMMANDS OBSERVED OR USED DURING THIS SESSION
+---------------------------------------------
+Initial switch identity / VLAN setup:
+  enable
+  configure terminal
+  hostname SW-MKT
+  vlan 10
+  name MARKETING
+  exit
+  end
+  show vlan brief
+
+Later hostname used in the final device:
+  configure terminal
+  hostname FLOOR1-MKT-SW
+
+Interface configuration observed/used:
+  configure terminal
+  interface gigabitEthernet 0/1
+  switchport mode trunk
+  switchport trunk allowed vlan 10
+  no shutdown
+  exit
+
+Access-port configuration observed in running-config:
+  interface FastEthernet0/1
+  switchport access vlan 10
+  switchport mode access
+  spanning-tree portfast
+
+  interface FastEthernet0/2
+  switchport access vlan 10
+  switchport mode access
+  spanning-tree portfast
+
+  [Fa0/1 through Fa0/10 were shown in VLAN 10 by `show vlan brief`.]
+
+Password/account commands:
+  enable secret <configured-secret>
+  username FL1MKTSWT secret <configured-secret>
+  line console 0
+  password MKT1FC
+  login
+  exit
+
+  [A prior username command was entered without the `secret` keyword and was
+  rejected. The corrected command syntax discussed was:
+  username FL1MKTSWT privilege 15 secret <password>
+  However, the captured running-config showed `username FL1MKTSWT secret 5 ...`
+  and did not show `privilege 15`. Use the live config as authoritative.]
+
+Verification commands attempted:
+  show vlan brief
+  show interfaces status
+  show interfaces trunk
+  show cdp neighbors
+  show running-config
+  show history
+  show port-security
+  show ip interface brief
+  show ip ssh
+  show running-config interface gigabitEthernet 0/1
+
+  [Some commands returned invalid input or were not supported by this Packet
+  Tracer IOS image. `show running-config` worked.]
+
+Command-history output visible in the latest screenshot:
+  switchport mode access
+  config ter
+  show running-config
+  show vlan brief
+  show interfaces trunk
+  show port-security
+  show ip interface brief
+  show ip interface brief
+  show history
+
+OTHER COMMANDS DISCUSSED BUT NOT CONFIRMED AS SUCCESSFULLY APPLIED
+------------------------------------------------------------------
+  service password-encryption
+  no username FL1MKTSWT
+  line vty 0 4
+  transport input none
+  copy running-config startup-config
+
+  These were recommendations/discussion, not confirmed by a later screenshot.
+  Do not treat them as completed unless verified on the switch.
+
+CURRENTLY CONFIRMED VLAN / PORT STATE FROM SCREENSHOT
+-----------------------------------------------------
+VLAN 1: default
+  Fa0/11 through Fa0/24 and Gi0/2 appeared in VLAN 1.
+
+VLAN 10: MARKETING
+  Fa0/1 through Fa0/10 appeared in VLAN 10.
+
+Trunk:
+  Gi0/1 appeared as trunk in `show interfaces status`.
+  Running-config showed trunk mode and allowed VLAN 10.
+
+SAVE CONFIGURATION (ONLY IF YOU WANT TO KEEP THE CURRENT STATE)
+--------------------------------------------------------------
+At privileged EXEC prompt:
+  copy running-config startup-config
+
+Verify:
+  show startup-config
+
+FINAL VERIFICATION COMMANDS
+---------------------------
+  show running-config
+  show vlan brief
+  show interfaces status
+  show interfaces trunk
+  show cdp neighbors
+  show history
+
+Before VAPT, take a clean baseline copy of the running configuration and
+record the exact test scope and expected behavior. Perform tests only against
+your team's isolated Packet Tracer lab.
+
+END OF RECORD
+=============
