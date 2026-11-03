@@ -1142,17 +1142,14 @@ interface vlan 2
 exit
 
 interface ethernet 0/0
- description TO-EDGE-R1-G0/0
  switchport access vlan 2
  no shutdown
 exit
 interface ethernet 0/1
- description TO-CORE-SW1-FA0/24
  switchport access vlan 1
  no shutdown
 exit
 interface ethernet 0/2
- description TO-CORE-SW2-FA0/24
  switchport access vlan 1
  no shutdown
 exit
